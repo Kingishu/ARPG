@@ -1,0 +1,16 @@
+ART 存放BOSS和NPC等美术资源
+BefourStudios 寺庙场景
+BoStaff_AnimSet_forUnity 棍棒动画
+Editor 编辑器扩展脚本
+GabrielAguiarProductions 特效
+GhostSamurai_Animset 忍者相关动作
+KriptoFX 体积血特效
+LShinobi 主角
+Piloto Studio 元素攻击特效
+Plugins 一些插件或者第三方库
+Red_Clue 格挡火花效果
+Resources 动态加载的资源
+Scenes 游戏场景
+Script 游戏相关脚本
+UI 游戏用到的一些UI
+Vefects 物品掉落特效
