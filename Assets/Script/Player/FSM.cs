@@ -6,18 +6,37 @@ using UnityEngine;
 
 public class FSM : MonoBehaviour
 {
+    //角色ID
+    [Range(1000,10000)]
+    public int ID;
     //单位基础表
     public UnitEntity unitEntity;
     //状态表
     Dictionary<int, PlayerState> stateData = new Dictionary<int, PlayerState>();
-    //角色ID
-    public int id;
     //当前状态
     public PlayerState currentState;
+    [HideInInspector]
+    public Transform _transform;
+    [HideInInspector]
+    public GameObject _gameObject;
+    public Animator animator;
+    public CharacterController characterController;
     void Awake()
     {
         //获取单位基础表
-        unitEntity = UnitData.Get(id);
+        unitEntity = UnitData.Get(ID);
+        _transform = this.transform;
+        _gameObject = this.gameObject;
+
+        //状态初始化
+        InitState();
+        InitServices();
+
+        animator = _transform.GetChild(0).GetComponent<Animator>();
+        characterController = GetComponent<CharacterController>();
+
+        //切换到1001 待机状态
+        ToNext(1001);
     }
     void Update()
     {
@@ -68,11 +87,11 @@ public class FSM : MonoBehaviour
             //info信息显示
             if (currentState != null)
             {
-                Debug.Log($"角色ID:{this.id},切换状态{stateData[next].Info()},当前状态{currentState.Info()}");
+                Debug.Log($"角色ID:{this.ID},切换状态{stateData[next].Info()},当前状态{currentState.Info()}");
             }
             else
             {
-                Debug.Log($"角色ID:{this.id},切换状态{stateData[next].Info()}");
+                Debug.Log($"角色ID:{this.ID},切换状态{stateData[next].Info()}");
             }
             //切换逻辑
             if (currentState != null)
@@ -125,7 +144,7 @@ public class FSM : MonoBehaviour
         DoStateEvent(currentState.id, StateEventType.animEnd);
     }
 
-    //Services服务组件内容
+    #region 服务组件内容
 
 
     List<FSMServiceBase> fsmServices = new List<FSMServiceBase>();
@@ -202,7 +221,7 @@ public class FSM : MonoBehaviour
             fsmServices[i].ReStart(currentState);
         }
     }
-
+    #endregion
 
 
 }
