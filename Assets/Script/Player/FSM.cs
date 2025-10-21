@@ -120,20 +120,19 @@ public class PlayerState
     public float beginTime;
     public PlayerStateEntity stateEntity;
     public SkillEntity skillEntity;
-    public float SetBegin()
+    public void SetBegin()
     {
         beginTime = Time.time;
-        return beginTime;
     }
     public bool IsCD()
     {
-        if (skillEntity.cd == 0)
+        if (skillEntity != null)
         {
             return false;
         }
         else
         {
-            return Time.time - beginTime > skillEntity.cd;
+            return Time.time - beginTime < skillEntity.cd;
         }
     }
     public string Info()
