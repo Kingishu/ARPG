@@ -21,8 +21,16 @@ public class FSM : MonoBehaviour
     }
     void Update()
     {
-        //执行当前状态绑定的事件
-        DoStateEvent(currentState.id, StateEventType.update);
+        if (currentState != null)
+        {
+            //服务组件可能会修改当前状态
+            if (ServicesOnUpdate() == false)
+            {
+                //执行当前状态绑定的事件
+                DoStateEvent(currentState.id, StateEventType.update);
+            }
+        }
+
     }
     //初始化的方法
     public void InitState()
@@ -70,12 +78,15 @@ public class FSM : MonoBehaviour
             if (currentState != null)
             {
                 DoStateEvent(currentState.id, StateEventType.end);
+                ServicesOnEnd();
+
             }
 
             currentState = stateData[next];
             currentState.SetBegin();
 
             DoStateEvent(currentState.id, StateEventType.begin);
+            ServicesOnBegin();
         }
     }
 
@@ -113,6 +124,87 @@ public class FSM : MonoBehaviour
     {
         DoStateEvent(currentState.id, StateEventType.animEnd);
     }
+
+    //Services服务组件内容
+
+
+    List<FSMServiceBase> fsmServices = new List<FSMServiceBase>();
+    //提前缓存当前服务组件的个数
+    int services_Count;
+    //添加服务组件
+    public T AddService<T>() where T : FSMServiceBase, new()
+    {
+        T service = new T();
+        fsmServices.Add(service);
+        service.Init(this);
+        return service;
+    }
+    //初始化服务组件
+    AnimationService animationService;
+    public void InitServices()
+    {
+        animationService = AddService<AnimationService>();
+        services_Count = fsmServices.Count;
+    }
+    //Services的各种生命周期函数
+    public void ServicesOnBegin()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].OnBegin(currentState);
+        }
+    }
+    public bool ServicesOnUpdate()
+    {
+        int cur_id = currentState.id;
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].OnUpdate(animationService.normalizedTime, currentState);
+            if (currentState.id != cur_id)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+    public void ServicesOnEnd()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].OnEnd(currentState);
+        }
+    }
+    public void ServicesOnAnimationEnd()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].OnAnimationEnd(currentState);
+        }
+    }
+    public void ServicesOnDisable()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].OnDisable(currentState);
+        }
+    }
+    public void ServicesReLoop()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].ReLoop(currentState);
+        }
+    }
+    public void ServicesReStart()
+    {
+        for (int i = 0; i < services_Count; i++)
+        {
+            fsmServices[i].ReStart(currentState);
+        }
+    }
+
+
+
 }
 public class PlayerState
 {
