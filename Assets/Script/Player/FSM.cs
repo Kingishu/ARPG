@@ -218,7 +218,7 @@ public class PlayerState
     }
     public bool IsCD()
     {
-        if (skillEntity != null)
+        if (skillEntity == null)
         {
             return false;
         }
