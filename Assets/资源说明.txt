@@ -1,3 +1,4 @@
+Arashi_Character 玩家模型
 ART 存放BOSS和NPC等美术资源
 BefourStudios 寺庙场景
 BoStaff_AnimSet_forUnity 棍棒动画
