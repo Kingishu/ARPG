@@ -43,7 +43,7 @@ public class FSM : MonoBehaviour
         if (currentState != null)
         {
             //服务组件可能会修改当前状态
-            if (ServicesOnUpdate() == false)
+            if (ServicesOnUpdate() == true)
             {
                 //执行当前状态绑定的事件
                 DoStateEvent(currentState.id, StateEventType.update);
@@ -74,8 +74,46 @@ public class FSM : MonoBehaviour
         stateData[1010].skillEntity = SkillData.Get(unitEntity.skill2);
         stateData[1011].skillEntity = SkillData.Get(unitEntity.skill3);
         stateData[1012].skillEntity = SkillData.Get(unitEntity.skill4);
+        
+        #region 事件绑定
+        //绑定移动输入相关事件
+        foreach (var state in stateData.Values)
+        {
+            if (state.stateEntity.on_move != null)
+            {
+                AddListener(state.id,StateEventType.update,OnMove);
+            }
+        }
+        
+        
+        #endregion
     }
+    /// <summary>
+    /// 检测状态是否都和前后摇
+    /// </summary>
+    /// <param name="config">前后摇消息</param>
+    /// <returns></returns>
+    public bool CheckConfig(float[] config)
+    {
+        if ((animationService.normalizedTime >0 && animationService.normalizedTime < config[0]) || 
+            (animationService.normalizedTime>config[1] && animationService.normalizedTime<1))
+        {
+            return true;
+        }
 
+        return false;
+    }
+    
+    private void OnMove()
+    {
+        if (Input.GetAxis("Horizontal")!=0 || Input.GetAxis("Vertical")!=0)
+        {
+            if (CheckConfig(currentState.stateEntity.on_move))
+            {
+                ToNext((int)currentState.stateEntity.on_move[2]);
+            }
+        }
+    }
     /// <summary>
     /// 切换状态的方法
     /// </summary>
@@ -87,11 +125,11 @@ public class FSM : MonoBehaviour
             //info信息显示
             if (currentState != null)
             {
-                Debug.Log($"角色ID:{this.ID},切换状态{stateData[next].Info()},当前状态{currentState.Info()}");
+                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
             }
             else
             {
-                Debug.Log($"角色ID:{this.ID},切换状态{stateData[next].Info()}");
+                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
             }
             //切换逻辑
             if (currentState != null)
@@ -248,7 +286,7 @@ public class PlayerState
     }
     public string Info()
     {
-        return $"状态信息{stateEntity.info}";
+        return $"{stateEntity.info}";
     }
 }
 
