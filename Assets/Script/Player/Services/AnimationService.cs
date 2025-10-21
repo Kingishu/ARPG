@@ -47,7 +47,7 @@ public class AnimationService : FSMServiceBase
     {
         base.OnUpdate(normalizedTime, state);
         if (!string.IsNullOrEmpty(now_play_id))
-        {
+        { 
             var info = player.animator.GetCurrentAnimatorStateInfo(0);
             if (info.IsName(now_play_id))
             {
@@ -62,7 +62,6 @@ public class AnimationService : FSMServiceBase
                     if (currentLoop>lastProcessedLoop)
                     {
                         player.ServicesOnAnimationEnd();
-                        Debug.Log("我执行了一次结束事件");
                         lastProcessedLoop=currentLoop;
                     }
                 }
@@ -71,7 +70,6 @@ public class AnimationService : FSMServiceBase
             {
                 normalizedTime = 0;
             }
-            Debug.Log(normalizedTime);
         }
        
     }

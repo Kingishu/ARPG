@@ -7,8 +7,10 @@ using UnityEngine;
 public class FSM : MonoBehaviour
 {
     //角色ID
-    [Range(1000,10000)]
-    public int ID;
+    [Header("角色属性表ID")]
+    public int ID=1001;
+    [Header("移动速度")]
+    public float _speed=5f;
     //单位基础表
     public UnitEntity unitEntity;
     //状态表
@@ -27,6 +29,7 @@ public class FSM : MonoBehaviour
         unitEntity = UnitData.Get(ID);
         _transform = this.transform;
         _gameObject = this.gameObject;
+        _camera=Camera.main;
 
         //状态初始化
         InitState();
@@ -83,11 +86,41 @@ public class FSM : MonoBehaviour
             {
                 AddListener(state.id,StateEventType.update,OnMove);
             }
+
+            if (state.stateEntity.do_move ==1)
+            {
+                AddListener(state.id,StateEventType.update,PlayerMove);
+            }
         }
         
         
         #endregion
     }
+
+    public Camera _camera;
+    private float targetRotation;
+    private float _rotationVelocity;
+    private float rotationSmoothTime=0.05f;
+    
+    private void PlayerMove()
+    {
+        if (Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0)
+        {
+            float x=Input.GetAxis("Horizontal");
+            float z=Input.GetAxis("Vertical");
+            Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
+            //旋转
+            targetRotation=Mathf.Atan2(x,z)*Mathf.Rad2Deg+_camera.transform.eulerAngles.y;
+            //平滑过度
+            float rotation=Mathf.SmoothDampAngle(_transform.eulerAngles.y,targetRotation,ref _rotationVelocity,rotationSmoothTime);
+            //赋值
+            transform.rotation=Quaternion.Euler(0,rotation,0);
+            //计算移动方向
+            Vector3 targetDirection = Quaternion.Euler(0.0f, targetRotation, 0.0f) * Vector3.forward;
+            Move(targetDirection.normalized*(_speed*GameTime.deltaTime),false,false,false,true);
+        }
+    }
+
     /// <summary>
     /// 检测状态是否都和前后摇
     /// </summary>
@@ -103,7 +136,32 @@ public class FSM : MonoBehaviour
 
         return false;
     }
-    
+
+    private bool groundCheck=false;
+    public void Move(Vector3 dir,bool transformDirection,bool deltaTime=true,bool add_Gravity=true,bool do_ground_check=true)
+    {
+        if (transformDirection)
+        {
+            dir = _transform.TransformDirection(dir);
+        }
+        Vector3 d2;
+        if (add_Gravity)
+        {
+            d2=(dir+GameDefine.gravity)*(deltaTime?GameTime.time:1);
+        }
+        else
+        {
+            d2=dir*(deltaTime?GameTime.time:1);
+        }
+
+        if (do_ground_check)
+        {
+            groundCheck = true;
+        }
+
+        characterController.Move(d2);
+
+    }
     private void OnMove()
     {
         if (Input.GetAxis("Horizontal")!=0 || Input.GetAxis("Vertical")!=0)
