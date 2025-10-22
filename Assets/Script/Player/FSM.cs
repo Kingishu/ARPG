@@ -104,7 +104,7 @@ public class FSM : MonoBehaviour
     private void Stop()
     {
         //WASD都没有按下,切换
-        if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+        if (UInput.GetAxis_Horizontal() == 0 && UInput.GetAxis_Vertical() == 0)
         {
             ToNext(currentState.stateEntity.on_stop);
         }
@@ -116,10 +116,10 @@ public class FSM : MonoBehaviour
     
     private void PlayerMove()
     {
-        if (Input.GetAxis("Horizontal") != 0 || Input.GetAxis("Vertical") != 0)
+        if (UInput.GetAxis_Horizontal() != 0 || UInput.GetAxis_Vertical() != 0)
         {
-            float x=Input.GetAxis("Horizontal");
-            float z=Input.GetAxis("Vertical");
+            float x = UInput.GetAxis_Horizontal();
+            float z = UInput.GetAxis_Vertical();
             Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
             //旋转
             targetRotation=Mathf.Atan2(x,z)*Mathf.Rad2Deg+GameDefine.camera.eulerAngles.y;
@@ -157,12 +157,10 @@ public class FSM : MonoBehaviour
         {
             if (Physics.Linecast(_transform.position,_transform.position+GameDefine.Ground_Dst,GameDefine.Ground_LayerMask))
             {
-                print("检测到已经接地");
                 groundCheck = false;
             }
             else
             {
-                print("检测到没有接地");
                 Move(Vector3.up * -9.81f,false,false,false,false);
             }
         }
@@ -196,7 +194,7 @@ public class FSM : MonoBehaviour
     }
     private void OnMove()
     {
-        if (Input.GetAxis("Horizontal")!=0 || Input.GetAxis("Vertical")!=0)
+        if (UInput.GetAxis_Horizontal()!=0 || UInput.GetAxis_Vertical()!=0)
         {
             if (CheckConfig(currentState.stateEntity.on_move))
             {
