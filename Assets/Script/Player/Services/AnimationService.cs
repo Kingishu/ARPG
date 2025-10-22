@@ -61,7 +61,7 @@ public class AnimationService : FSMServiceBase
                     //如果当前的圈数大于已经处理过的圈数,证明有一个结束事件没有处理
                     if (currentLoop>lastProcessedLoop)
                     {
-                        player.ServicesOnAnimationEnd();
+                        player.AnimationOnPlayEnd();
                         lastProcessedLoop=currentLoop;
                     }
                 }

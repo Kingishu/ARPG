@@ -29,7 +29,6 @@ public class FSM : MonoBehaviour
         unitEntity = UnitData.Get(ID);
         _transform = this.transform;
         _gameObject = this.gameObject;
-        _camera=Camera.main;
 
         //状态初始化
         InitState();
@@ -51,6 +50,8 @@ public class FSM : MonoBehaviour
                 //执行当前状态绑定的事件
                 DoStateEvent(currentState.id, StateEventType.update);
             }
+
+            ToGround();
         }
 
     }
@@ -91,13 +92,24 @@ public class FSM : MonoBehaviour
             {
                 AddListener(state.id,StateEventType.update,PlayerMove);
             }
+
+            if (state.stateEntity.on_stop!=0)
+            {
+                AddListener(state.id,StateEventType.update,Stop);
+            }
         }
-        
-        
         #endregion
     }
 
-    public Camera _camera;
+    private void Stop()
+    {
+        //WASD都没有按下,切换
+        if (Input.GetAxis("Horizontal") == 0 && Input.GetAxis("Vertical") == 0)
+        {
+            ToNext(currentState.stateEntity.on_stop);
+        }
+    }
+
     private float targetRotation;
     private float _rotationVelocity;
     private float rotationSmoothTime=0.05f;
@@ -110,7 +122,7 @@ public class FSM : MonoBehaviour
             float z=Input.GetAxis("Vertical");
             Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
             //旋转
-            targetRotation=Mathf.Atan2(x,z)*Mathf.Rad2Deg+_camera.transform.eulerAngles.y;
+            targetRotation=Mathf.Atan2(x,z)*Mathf.Rad2Deg+GameDefine.camera.eulerAngles.y;
             //平滑过度
             float rotation=Mathf.SmoothDampAngle(_transform.eulerAngles.y,targetRotation,ref _rotationVelocity,rotationSmoothTime);
             //赋值
@@ -136,7 +148,27 @@ public class FSM : MonoBehaviour
 
         return false;
     }
-
+    /// <summary>
+    /// 接地检测方法
+    /// </summary>
+    public void ToGround()
+    {
+        if (groundCheck)
+        {
+            if (Physics.Linecast(_transform.position,_transform.position+GameDefine.Ground_Dst,GameDefine.Ground_LayerMask))
+            {
+                print("检测到已经接地");
+                groundCheck = false;
+            }
+            else
+            {
+                print("检测到没有接地");
+                Move(Vector3.up * -9.81f,false,false,false,false);
+            }
+        }
+    }
+    
+    
     private bool groundCheck=false;
     public void Move(Vector3 dir,bool transformDirection,bool deltaTime=true,bool add_Gravity=true,bool do_ground_check=true)
     {
@@ -237,7 +269,28 @@ public class FSM : MonoBehaviour
 
     public void AnimationOnPlayEnd()
     {
+        //存储一下当前状态id
+        int crn_id = currentState.id;
         DoStateEvent(currentState.id, StateEventType.animEnd);
+        ServicesOnAnimationEnd();
+
+        if (crn_id == currentState.id)
+        {
+            switch (currentState.stateEntity.on_anm_end)
+            {
+                case -1:
+                    //不需要做任何处理
+                    break;
+                case 0:
+                    //循环动画
+                    ServicesReStart();
+                    return;
+                default:
+                    //切换
+                    ToNext(currentState.stateEntity.on_anm_end);
+                    break;
+            }
+        }
     }
 
     #region 服务组件内容
