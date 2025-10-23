@@ -11,6 +11,8 @@ public class FSM : MonoBehaviour
     public int ID=1001;
     [Header("移动速度")]
     public float _speed=5f;
+
+    [Header("角色是否为AI")] public bool AI;
     //单位基础表
     public UnitEntity unitEntity;
     //状态表
@@ -30,12 +32,14 @@ public class FSM : MonoBehaviour
         _transform = this.transform;
         _gameObject = this.gameObject;
 
+        animator = _transform.GetChild(0).GetComponent<Animator>();
+        characterController = GetComponent<CharacterController>();
+        
         //状态初始化
         InitState();
         InitServices();
 
-        animator = _transform.GetChild(0).GetComponent<Animator>();
-        characterController = GetComponent<CharacterController>();
+        
 
         //切换到1001 待机状态
         ToNext(1001);
@@ -55,9 +59,29 @@ public class FSM : MonoBehaviour
         }
 
     }
+    
+    //拿到配置表
+    private StateSO anmConfig;
     //初始化的方法
     public void InitState()
     {
+        //拿到当前角色的配置表
+        anmConfig = Resources.Load<StateSO>($"StateConfig/{ID}");
+        //字典缓存配置信息
+        Dictionary<int,StateEntity> states = new Dictionary<int, StateEntity>();
+        //添加进入字典
+        foreach (var item in anmConfig.states)
+        {
+            states[item.id] = item;
+        }
+        
+        //对状态中的动画长度进行初始化
+        var clips = animator.runtimeAnimatorController.animationClips;
+        Dictionary<string, float> clipsLength = new();
+        foreach (var clip in clips)
+        {
+            clipsLength[clip.name] = clip.length;
+        }
         if (PlayerStateData.all != null)
         {
             foreach (var state in PlayerStateData.all)
@@ -65,6 +89,11 @@ public class FSM : MonoBehaviour
                 PlayerState newState = new PlayerState();
                 newState.id = state.Key;
                 newState.excel_config = state.Value;
+                newState.stateEntity=states[newState.id];
+                if (clipsLength.TryGetValue(newState.excel_config.anm_name,out var length))
+                {
+                    newState.clipLength=length;
+                }
                 stateData.Add(newState.id, newState);
             }
         }
@@ -107,8 +136,25 @@ public class FSM : MonoBehaviour
             {
                 AddListener(state.id,StateEventType.update,OnJumpUpdate);
             }
+
+            if (state.excel_config.add_f_move!=0)
+            {
+                AddListener(state.id,StateEventType.update,AddForwardMove);
+            }
         }
         #endregion
+    }
+
+    private void AddForwardMove()
+    {
+        float x = UInput.GetAxis_Horizontal();
+        float z = UInput.GetAxis_Vertical();
+        if (x!=0 || z>0)
+        {
+            Vector3 v = new Vector3(x, 0, z>0?z:0).normalized * currentState.excel_config.add_f_move;
+            Move(v,true,true,false,false);
+        }
+
     }
 
     private void OnJumpUpdate()
@@ -206,18 +252,17 @@ public class FSM : MonoBehaviour
         Vector3 d2;
         if (add_Gravity)
         {
-            d2=(dir+GameDefine.gravity)*(deltaTime?GameTime.time:1);
+            d2=(dir+GameDefine.gravity)*(deltaTime?GameTime.deltaTime:1);
         }
         else
         {
-            d2=dir*(deltaTime?GameTime.time:1);
+            d2=dir*(deltaTime?GameTime.deltaTime:1);
         }
 
         if (do_ground_check)
         {
             groundCheck = true;
         }
-
         characterController.Move(d2);
 
     }
@@ -336,9 +381,11 @@ public class FSM : MonoBehaviour
     }
     //初始化服务组件
     AnimationService animationService;
+    PhysicsService physicsService;
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
+        physicsService=AddService<PhysicsService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数
@@ -399,13 +446,35 @@ public class FSM : MonoBehaviour
     }
     #endregion
 
+    public void AddForce(Vector3 force, bool currentEntityIgnoreGravity)
+    {
+        Move(force,false,true,currentEntityIgnoreGravity==false,!currentEntityIgnoreGravity);
+    }
 
+    public int GetEnemyLayer()
+    {
+        if (AI)
+        {
+            return GameDefine.Player_LayerMask;
+        }
+        else
+        {
+            return GameDefine.Enemy_LayerMask;
+        }
+    }
+
+    public void RemoveForce()
+    {
+        
+    }
 }
 public class PlayerState
 {
     public int id;
     public float beginTime;
+    public float clipLength;//动作片段的长度
     public PlayerStateEntity excel_config;
+    public StateEntity stateEntity;
     public SkillEntity skillEntity;
     public void SetBegin()
     {
