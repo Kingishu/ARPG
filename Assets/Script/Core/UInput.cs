@@ -24,5 +24,10 @@ public static class UInput
     {
         return Input.GetAxis("Mouse ScrollWheel");
     }
+
+    public static bool GetKeyDown_Space()
+    {
+        return Input.GetKeyDown(KeyCode.Space);
+    }
     
 }

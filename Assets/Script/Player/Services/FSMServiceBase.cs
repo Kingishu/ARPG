@@ -25,7 +25,7 @@ public class FSMServiceBase
     {
         executed[index] = false;
     }
-    public void ReSetExecuteAll()
+    public void ReSetAllExecute()
     {
         if (executed.Count > 0)
         {

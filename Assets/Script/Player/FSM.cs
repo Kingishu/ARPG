@@ -64,7 +64,7 @@ public class FSM : MonoBehaviour
             {
                 PlayerState newState = new PlayerState();
                 newState.id = state.Key;
-                newState.stateEntity = state.Value;
+                newState.excel_config = state.Value;
                 stateData.Add(newState.id, newState);
             }
         }
@@ -83,22 +83,51 @@ public class FSM : MonoBehaviour
         //绑定移动输入相关事件
         foreach (var state in stateData.Values)
         {
-            if (state.stateEntity.on_move != null)
+            if (state.excel_config.on_move != null)
             {
                 AddListener(state.id,StateEventType.update,OnMove);
             }
 
-            if (state.stateEntity.do_move ==1)
+            if (state.excel_config.do_move ==1)
             {
                 AddListener(state.id,StateEventType.update,PlayerMove);
             }
 
-            if (state.stateEntity.on_stop!=0)
+            if (state.excel_config.on_stop!=0)
             {
                 AddListener(state.id,StateEventType.update,Stop);
             }
+
+            if (state.excel_config.on_jump!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnJump);
+            }
+
+            if (state.excel_config.on_jump_end!=0)
+            {
+                AddListener(state.id,StateEventType.update,OnJumpUpdate);
+            }
         }
         #endregion
+    }
+
+    private void OnJumpUpdate()
+    {
+        if (Physics.Raycast(_transform.position,Vector3.up*-1f,0.15f,GameDefine.Ground_LayerMask))
+        {
+            ToNext(currentState.excel_config.on_jump_end);
+        }
+    }
+
+    private void OnJump()
+    {
+        if (UInput.GetKeyDown_Space())
+        {
+            if (CheckConfig(currentState.excel_config.on_jump))
+            {
+                ToNext((int)currentState.excel_config.on_jump[2]);
+            }
+        }
     }
 
     private void Stop()
@@ -106,7 +135,7 @@ public class FSM : MonoBehaviour
         //WASD都没有按下,切换
         if (UInput.GetAxis_Horizontal() == 0 && UInput.GetAxis_Vertical() == 0)
         {
-            ToNext(currentState.stateEntity.on_stop);
+            ToNext(currentState.excel_config.on_stop);
         }
     }
 
@@ -196,9 +225,9 @@ public class FSM : MonoBehaviour
     {
         if (UInput.GetAxis_Horizontal()!=0 || UInput.GetAxis_Vertical()!=0)
         {
-            if (CheckConfig(currentState.stateEntity.on_move))
+            if (CheckConfig(currentState.excel_config.on_move))
             {
-                ToNext((int)currentState.stateEntity.on_move[2]);
+                ToNext((int)currentState.excel_config.on_move[2]);
             }
         }
     }
@@ -274,7 +303,7 @@ public class FSM : MonoBehaviour
 
         if (crn_id == currentState.id)
         {
-            switch (currentState.stateEntity.on_anm_end)
+            switch (currentState.excel_config.on_anm_end)
             {
                 case -1:
                     //不需要做任何处理
@@ -285,7 +314,7 @@ public class FSM : MonoBehaviour
                     return;
                 default:
                     //切换
-                    ToNext(currentState.stateEntity.on_anm_end);
+                    ToNext(currentState.excel_config.on_anm_end);
                     break;
             }
         }
@@ -376,7 +405,7 @@ public class PlayerState
 {
     public int id;
     public float beginTime;
-    public PlayerStateEntity stateEntity;
+    public PlayerStateEntity excel_config;
     public SkillEntity skillEntity;
     public void SetBegin()
     {
@@ -395,7 +424,7 @@ public class PlayerState
     }
     public string Info()
     {
-        return $"{stateEntity.info}";
+        return $"{excel_config.info}";
     }
 }
 

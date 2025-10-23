@@ -9,7 +9,7 @@ public class AnimationService : FSMServiceBase
     private void Play(PlayerState state)
     {
         normalizedTime = 0;
-        now_play_id=state.stateEntity.anm_name;
+        now_play_id=state.excel_config.anm_name;
         player.animator.Play(now_play_id);
         player.animator.Update(0);
     }
