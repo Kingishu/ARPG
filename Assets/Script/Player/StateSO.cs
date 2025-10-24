@@ -59,6 +59,7 @@ public class StateEntity
     public List<PhysicsConfig> physicsConfig;
 
     [Header("物体控制配置")] public List<Obj_State> ObjStates;
+    [Header("顿帧配置")] public List<HitLagConfig> hitLagConfig;
 
 }
 [System.Serializable]
@@ -92,4 +93,13 @@ public class Obj_State
     public bool force;
     [Header("状态循环,该状态是否循环")]
     public bool loop;
+}
+[System.Serializable]
+public class HitLagConfig
+{
+    [Header("触发点")] public float trigger;
+    [Header("顿帧帧数")] public int frame;
+    [Header("触发方式:0直接触发 1命中触发")] public int Type;
+    [Header("触发点2")] public float trigger2;
+    [Header("是否插值")] public bool lerp;
 }
