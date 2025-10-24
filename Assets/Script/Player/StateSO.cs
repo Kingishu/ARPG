@@ -53,9 +53,13 @@ public class StateEntity
     public int id;
     [Header("动作信息")]
     public string info;
+    [Header("是否忽略碰撞")] 
+    public bool IgnoreCollision;
     [Header("物理位移配置")]
     public List<PhysicsConfig> physicsConfig;
-    
+
+    [Header("物体控制配置")] public List<Obj_State> ObjStates;
+
 }
 [System.Serializable]
 public class PhysicsConfig
@@ -72,4 +76,20 @@ public class PhysicsConfig
     public bool ignore_Gravity;
     [Header("检测单位后停下")]
     public float stop_dst;
+}
+[System.Serializable]
+public class Obj_State
+{
+    [Header("介绍")]
+    public string info;
+    [Header("触发点")] 
+    public float trigger;
+    [Header("控制的物体")] 
+    public List<string> object_ID;
+    [Header("启用/隐藏")] 
+    public bool act;
+    [Header("状态被打断,改状态是否继续执行")] 
+    public bool force;
+    [Header("状态循环,该状态是否循环")]
+    public bool loop;
 }

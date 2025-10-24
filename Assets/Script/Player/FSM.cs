@@ -180,8 +180,51 @@ public class FSM : MonoBehaviour
             {
                 AddListener(state.id,StateEventType.update,OnPowAtk);
             }
+
+            if (state.excel_config.do_rotate!=0)
+            {
+                AddListener(state.id,StateEventType.update,DoRotate);
+            }
+
+            if (state.stateEntity.IgnoreCollision)
+            {
+                AddListener(state.id,StateEventType.begin,DisableCollider);
+                AddListener(state.id,StateEventType.end,EnableCollider);
+            }
         }
         #endregion
+    }
+
+    private void EnableCollider()
+    {
+        characterController.excludeLayers = 0;
+    }
+
+    private void DisableCollider()
+    {
+        characterController.excludeLayers = GameDefine.Enemy_LayerMask;
+    }
+
+    private float DoRotationSmoothTime=0.05f;
+    private float DoRotationVelocity;
+    private void DoRotate()
+    {
+        float x = UInput.GetAxis_Horizontal();
+        float z=UInput.GetAxis_Vertical();
+        if (x!=0 || z!=0)
+        {
+            if (animationService.normalizedTime <= currentState.excel_config.do_rotate)
+            {
+                Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
+                //旋转
+                targetRotation= Mathf.Clamp(Mathf.Atan2(x,z)*Mathf.Rad2Deg,-45f,45f)+GameDefine.camera.eulerAngles.y;
+                //对旋转角度做一个限制,不超过60度,不然非常不自然
+                //平滑过度
+                float rotation=Mathf.SmoothDampAngle(_transform.eulerAngles.y,targetRotation,ref DoRotationVelocity,DoRotationSmoothTime);
+                //赋值
+                transform.rotation=Quaternion.Euler(0,rotation,0);
+            }
+        }
     }
 
     private float powAtk_BeginTime;
@@ -525,10 +568,12 @@ public class FSM : MonoBehaviour
     //初始化服务组件
     AnimationService animationService;
     PhysicsService physicsService;
+    ObjService objService;
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
         physicsService=AddService<PhysicsService>();
+        objService=AddService<ObjService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数
@@ -609,6 +654,29 @@ public class FSM : MonoBehaviour
     public void RemoveForce()
     {
         
+    }
+    Dictionary<string,GameObject> hangPoint=new Dictionary<string, GameObject>();
+    public GameObject GetHangPoint(string name)
+    {
+        if (hangPoint.TryGetValue(name,out GameObject temp))
+        {
+            return temp;
+        }
+        else
+        {
+            temp=_transform.Find(name).gameObject;
+            if (temp!=null)
+            {
+                hangPoint[name] = temp;
+                return temp;
+            }
+            else
+            {
+                hangPoint[name] = null;
+                return null;
+            }
+            
+        }
     }
 }
 public class PlayerState
