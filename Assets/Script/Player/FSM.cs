@@ -141,8 +141,151 @@ public class FSM : MonoBehaviour
             {
                 AddListener(state.id,StateEventType.update,AddForwardMove);
             }
+
+            if (state.excel_config.on_atk!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnAtk);
+            }
+
+            if (state.excel_config.on_skill1!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnSkill1);
+            }
+            if (state.excel_config.on_skill2!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnSkill2);
+            }
+            if (state.excel_config.on_skill3!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnSkill3);
+            }
+            if (state.excel_config.on_skill4!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnSkill4);
+            }
+            if (state.excel_config.on_defense!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnDefense);
+            }
+            if (state.excel_config.on_defense_quit!=0)
+            {
+                AddListener(state.id,StateEventType.update,OnDefenseQuit);
+            }
+            if (state.excel_config.on_sprint!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnSprint);
+            }
+
+            if (state.excel_config.on_pow_atk!=null)
+            {
+                AddListener(state.id,StateEventType.update,OnPowAtk);
+            }
         }
         #endregion
+    }
+
+    private float powAtk_BeginTime;
+    private void OnPowAtk()
+    {
+        if (UInput.GetMouseButtonDown_Left())
+        {
+            powAtk_BeginTime = 0;
+        }
+
+        if (UInput.GetMouseButton_Left())
+        {
+            if (GameTime.time-powAtk_BeginTime>=0.1f)
+            {
+                if (CheckConfig(currentState.excel_config.on_pow_atk))
+                {
+                    ToNext((int)currentState.excel_config.on_pow_atk[2]);
+                }
+            }
+        }
+    }
+
+    private void OnSprint()
+    {
+        if (UInput.GetKeyDown_LeftShift())
+        {
+            if (CheckConfig(currentState.excel_config.on_sprint))
+            {
+                ToNext((int)currentState.excel_config.on_sprint[2]);
+            }
+        }
+    }
+
+    private void OnDefenseQuit()
+    {
+        if (UInput.GetMouseButtonUp_Right())
+        {
+            ToNext(currentState.excel_config.on_defense_quit);
+        }
+    }
+
+    private void OnDefense()
+    {
+        if (UInput.GetMouseButtonDown_Right())
+        {
+            if (CheckConfig(currentState.excel_config.on_defense))
+            {
+                ToNext((int)currentState.excel_config.on_defense[2]);
+            }
+        }
+    }
+
+    private void OnSkill4()
+    {
+        if (UInput.GetKeyDown_T())
+        {
+            if (CheckConfig(currentState.excel_config.on_skill4))
+            {
+                ToNext((int)currentState.excel_config.on_skill4[2]);
+            }
+        }
+    }
+    private void OnSkill3()
+    {
+        if (UInput.GetKeyDown_R())
+        {
+            if (CheckConfig(currentState.excel_config.on_skill3))
+            {
+                ToNext((int)currentState.excel_config.on_skill3[2]);
+            }
+        }
+    }
+
+    private void OnSkill2()
+    {
+        if (UInput.GetKeyDown_E())
+        {
+            if (CheckConfig(currentState.excel_config.on_skill2))
+            {
+                ToNext((int)currentState.excel_config.on_skill2[2]);
+            }
+        }
+    }
+
+    private void OnSkill1()
+    {
+        if (UInput.GetKeyDown_Q())
+        {
+            if (CheckConfig(currentState.excel_config.on_skill1))
+            {
+                ToNext((int)currentState.excel_config.on_skill1[2]);
+            }
+        }
+    }
+
+    private void OnAtk()
+    {
+        if (UInput.GetMouseButtonUp_Left())
+        {
+            if (CheckConfig(currentState.excel_config.on_atk))
+            {
+                ToNext((int)currentState.excel_config.on_atk[2]);
+            }
+        }
     }
 
     private void AddForwardMove()
@@ -448,7 +591,7 @@ public class FSM : MonoBehaviour
 
     public void AddForce(Vector3 force, bool currentEntityIgnoreGravity)
     {
-        Move(force,false,true,currentEntityIgnoreGravity==false,!currentEntityIgnoreGravity);
+        Move(force,true,true,currentEntityIgnoreGravity==false,!currentEntityIgnoreGravity);
     }
 
     public int GetEnemyLayer()

@@ -29,5 +29,48 @@ public static class UInput
     {
         return Input.GetKeyDown(KeyCode.Space);
     }
+
+    public static bool GetMouseButtonUp_Left()
+    {
+        return Input.GetMouseButtonUp(0);
+    }
+    public static bool GetMouseButton_Left()
+    {
+        return Input.GetMouseButton(0);
+    }
+    public static bool GetMouseButtonDown_Left()
+    {
+        return Input.GetMouseButtonDown(0);
+    }
+    public static bool GetMouseButtonDown_Right()
+    {
+        return Input.GetMouseButtonDown(1);
+    }
+    public static bool GetMouseButtonUp_Right()
+    {
+        return Input.GetMouseButtonUp(1);
+    }
+
+    public static bool GetKeyDown_Q()
+    {
+        return Input.GetKeyDown(KeyCode.Q);
+    }
+    public static bool GetKeyDown_E()
+    {
+        return Input.GetKeyDown(KeyCode.E);
+    }
+    public static bool GetKeyDown_R()
+    {
+        return Input.GetKeyDown(KeyCode.R);
+    }
+    public static bool GetKeyDown_T()
+    {
+        return Input.GetKeyDown(KeyCode.T);
+    }
+
+    public static bool GetKeyDown_LeftShift()
+    {
+        return Input.GetKeyDown(KeyCode.LeftShift);
+    }
     
 }
