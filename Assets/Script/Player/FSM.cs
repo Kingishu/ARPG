@@ -570,12 +570,14 @@ public class FSM : MonoBehaviour
     PhysicsService physicsService;
     ObjService objService;
     HitlagService hitlagService;
+    RadialBlurService radialBlurService;
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
         physicsService=AddService<PhysicsService>();
         objService=AddService<ObjService>();
         hitlagService=AddService<HitlagService>();
+        radialBlurService=AddService<RadialBlurService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数

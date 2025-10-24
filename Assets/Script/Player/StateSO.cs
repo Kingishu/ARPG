@@ -60,7 +60,7 @@ public class StateEntity
 
     [Header("物体控制配置")] public List<Obj_State> ObjStates;
     [Header("顿帧配置")] public List<HitLagConfig> hitLagConfig;
-
+    [Header("径向模糊配置")]public List<RadialBlurConfig> radialBlurConfig;
 }
 [System.Serializable]
 public class PhysicsConfig
@@ -102,4 +102,11 @@ public class HitLagConfig
     [Header("触发方式:0直接触发 1命中触发")] public int Type;
     [Header("触发点2")] public float trigger2;
     [Header("是否插值")] public bool lerp;
+}
+[System.Serializable]
+public class RadialBlurConfig
+{
+    [Header("触发点")] public float trigger;
+    [Header("启用/关闭")]public bool act;
+    [Header("平滑时间")] public float lerpTime;
 }
