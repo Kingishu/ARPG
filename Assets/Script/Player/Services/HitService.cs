@@ -77,7 +77,7 @@ public class HitService:FSMServiceBase
     {
         if (Physics.Linecast(start,end,out var hitinfo,player.GetEnemyLayer(),QueryTriggerInteraction.Collide))
         {
-            if (hitinfo.collider.CompareTag(GameDefine.WeaponTag) || true)
+            if (hitinfo.collider.CompareTag(GameDefine.WeaponTag))
             {
                 OnBlock(hitinfo);
             }

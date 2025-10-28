@@ -32,6 +32,10 @@ public class AudioManager
         audio.volume=volume;
         audio.spatialBlend=spactialBlend;
         audio.Play();
+        CoroutineHelper.Instance.ExecuteAfterDelay(audio.clip.length, () =>
+        {
+            Stop(audio);
+        });
     }
 
     public void Stop(AudioSource audio)
