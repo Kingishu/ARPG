@@ -19,10 +19,16 @@ public class FSM : MonoBehaviour
     Dictionary<int, PlayerState> stateData = new Dictionary<int, PlayerState>();
     //当前状态
     public PlayerState currentState;
+    //属性表
+    private UnitAttEntity att_base;
+    //当前属性表
+    public UnitAttEntity att_crn;
     [HideInInspector]
     public Transform _transform;
     [HideInInspector]
     public GameObject _gameObject;
+    [HideInInspector]
+    public int instance_ID;
     public Animator animator;
     public CharacterController characterController;
     void Awake()
@@ -31,15 +37,18 @@ public class FSM : MonoBehaviour
         unitEntity = UnitData.Get(ID);
         _transform = this.transform;
         _gameObject = this.gameObject;
+        instance_ID = GetInstanceID();
 
         animator = _transform.GetChild(0).GetComponent<Animator>();
         characterController = GetComponent<CharacterController>();
         
+        //属性初始化
+        att_base = AttHelper.Instance.Creat(unitEntity.att_id);
+        att_crn=AttHelper.Instance.Creat(att_base);
+        
         //状态初始化
         InitState();
         InitServices();
-
-        
 
         //切换到1001 待机状态
         ToNext(1001);
@@ -110,86 +119,97 @@ public class FSM : MonoBehaviour
         
         #region 事件绑定
         //绑定移动输入相关事件
-        foreach (var state in stateData.Values)
+        if (AI == false)
         {
-            if (state.excel_config.on_move != null)
-            {
-                AddListener(state.id,StateEventType.update,OnMove);
-            }
 
-            if (state.excel_config.do_move ==1)
-            {
-                AddListener(state.id,StateEventType.update,PlayerMove);
-            }
 
-            if (state.excel_config.on_stop!=0)
+            foreach (var state in stateData.Values)
             {
-                AddListener(state.id,StateEventType.update,Stop);
-            }
+                if (state.excel_config.on_move != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnMove);
+                }
 
-            if (state.excel_config.on_jump!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnJump);
-            }
+                if (state.excel_config.do_move == 1)
+                {
+                    AddListener(state.id, StateEventType.update, PlayerMove);
+                }
 
-            if (state.excel_config.on_jump_end!=0)
-            {
-                AddListener(state.id,StateEventType.update,OnJumpUpdate);
-            }
+                if (state.excel_config.on_stop != 0)
+                {
+                    AddListener(state.id, StateEventType.update, Stop);
+                }
 
-            if (state.excel_config.add_f_move!=0)
-            {
-                AddListener(state.id,StateEventType.update,AddForwardMove);
-            }
+                if (state.excel_config.on_jump != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnJump);
+                }
 
-            if (state.excel_config.on_atk!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnAtk);
-            }
+                if (state.excel_config.on_jump_end != 0)
+                {
+                    AddListener(state.id, StateEventType.update, OnJumpUpdate);
+                }
 
-            if (state.excel_config.on_skill1!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnSkill1);
-            }
-            if (state.excel_config.on_skill2!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnSkill2);
-            }
-            if (state.excel_config.on_skill3!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnSkill3);
-            }
-            if (state.excel_config.on_skill4!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnSkill4);
-            }
-            if (state.excel_config.on_defense!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnDefense);
-            }
-            if (state.excel_config.on_defense_quit!=0)
-            {
-                AddListener(state.id,StateEventType.update,OnDefenseQuit);
-            }
-            if (state.excel_config.on_sprint!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnSprint);
-            }
+                if (state.excel_config.add_f_move != 0)
+                {
+                    AddListener(state.id, StateEventType.update, AddForwardMove);
+                }
 
-            if (state.excel_config.on_pow_atk!=null)
-            {
-                AddListener(state.id,StateEventType.update,OnPowAtk);
-            }
+                if (state.excel_config.on_atk != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnAtk);
+                }
 
-            if (state.excel_config.do_rotate!=0)
-            {
-                AddListener(state.id,StateEventType.update,DoRotate);
-            }
+                if (state.excel_config.on_skill1 != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnSkill1);
+                }
 
-            if (state.stateEntity.IgnoreCollision)
-            {
-                AddListener(state.id,StateEventType.begin,DisableCollider);
-                AddListener(state.id,StateEventType.end,EnableCollider);
+                if (state.excel_config.on_skill2 != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnSkill2);
+                }
+
+                if (state.excel_config.on_skill3 != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnSkill3);
+                }
+
+                if (state.excel_config.on_skill4 != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnSkill4);
+                }
+
+                if (state.excel_config.on_defense != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnDefense);
+                }
+
+                if (state.excel_config.on_defense_quit != 0)
+                {
+                    AddListener(state.id, StateEventType.update, OnDefenseQuit);
+                }
+
+                if (state.excel_config.on_sprint != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnSprint);
+                }
+
+                if (state.excel_config.on_pow_atk != null)
+                {
+                    AddListener(state.id, StateEventType.update, OnPowAtk);
+                }
+
+                if (state.excel_config.do_rotate != 0)
+                {
+                    AddListener(state.id, StateEventType.update, DoRotate);
+                }
+
+                if (state.stateEntity.IgnoreCollision)
+                {
+                    AddListener(state.id, StateEventType.begin, DisableCollider);
+                    AddListener(state.id, StateEventType.end, EnableCollider);
+                }
             }
         }
         #endregion
@@ -473,11 +493,11 @@ public class FSM : MonoBehaviour
             //info信息显示
             if (currentState != null)
             {
-                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
+              //  Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
             }
             else
             {
-                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
+               // Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
             }
             //切换逻辑
             if (currentState != null)
@@ -503,7 +523,7 @@ public class FSM : MonoBehaviour
             events = new();
             actions.Add(id, events);
         }
-        if (!events.TryGetValue(type, out var list))
+        if (!events.TryGetValue(type, out var list)) 
         {
             list = new List<Action>();
             events.Add(type, list);
@@ -571,6 +591,7 @@ public class FSM : MonoBehaviour
     ObjService objService;
     HitlagService hitlagService;
     RadialBlurService radialBlurService;
+    HitService hitService;
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
@@ -578,6 +599,7 @@ public class FSM : MonoBehaviour
         objService=AddService<ObjService>();
         hitlagService=AddService<HitlagService>();
         radialBlurService=AddService<RadialBlurService>();
+        hitService=AddService<HitService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数
@@ -680,6 +702,108 @@ public class FSM : MonoBehaviour
                 return null;
             }
             
+        }
+    }
+
+    public void UpdateHP_OnHit(int damage)
+    {
+        att_crn.hp-=damage;
+        if (att_crn.hp<=0)
+        {
+            att_crn.hp = 0;
+        }
+        Debug.Log($"当前的血量是{ att_crn.hp},收到了{damage}点伤害");
+        //血条更新
+        if (AI)
+        {
+            if (unitEntity.type==3)
+            {
+                 //更新BOss血条
+            }
+            else if (unitEntity.type==1 || unitEntity.type==2)
+            {
+               //更新小兵和精英怪的血条 
+            }
+        }
+        else
+        {
+            //更新主角血条
+        }
+    }
+
+    public FSM atk_target;
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="fd">1代表敌人在前方,-1代表敌人在后方,0代表敌人和玩家平行,平行视为敌人在前方</param>
+    /// <param name="atk"></param>
+    public void OnHit(int fd, FSM atk)
+    {
+        if (currentState.excel_config.on_hit!=null)
+        {
+            if (fd==1 || fd==0)//攻击者在自身的前方
+            {
+                //切换到前方受击
+                ToNext(currentState.excel_config.on_hit[0]);
+            }
+            else if (fd==-1)
+            {
+                //切换到后方受击
+                ToNext(currentState.excel_config.on_hit[1]);
+            }
+        }
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="fd">1代表敌人在前方,-1代表敌人在后方,0代表敌人和玩家平行,平行视为敌人在前方</param>
+    /// <param name="atk"></param>
+    public void OnDead(int fd, FSM atk)
+    {
+        if (currentState.excel_config.on_hit!=null)
+        {
+            if (fd==1 || fd==0)//攻击者在自身的前方
+            {
+                //切换到前方受击
+                ToNext(currentState.excel_config.on_death[0]);
+            }
+            else if (fd==-1)
+            {
+                //切换到后方受击
+                ToNext(currentState.excel_config.on_death[1]);
+            }
+            
+        }
+        characterController.enabled=false;
+        //下面是特殊处理
+    }
+
+    public void Attack_Hitlag(PlayerState state)
+    {
+        hitlagService.DoHitlag_OnAtk(animationService.normalizedTime,state);
+    }
+/// <summary>
+/// 格挡成功,进入格挡成功状态
+/// </summary>
+/// <param name="atk">攻击方</param>
+/// <exception cref="NotImplementedException"></exception>
+    public void OnBlockSucces(FSM atk)
+    {
+        if (currentState.excel_config.on_block_succes!=0)
+        {
+            ToNext(currentState.excel_config.on_block_succes);
+        }
+    }
+/// <summary>
+/// 攻击被格挡,进入弹反状态
+/// </summary>
+/// <param name="fsm">防守方</param>
+/// <exception cref="NotImplementedException"></exception>
+    public void BeBlock(FSM fsm)
+    {
+        if (currentState.excel_config.be_block!=null)
+        {
+            ToNext(currentState.excel_config.be_block[0]);
         }
     }
 }

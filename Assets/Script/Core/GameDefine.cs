@@ -12,6 +12,8 @@ public class GameDefine
     public static int Enemy_LayerMask;
     public static int Player_LayerMask;
 
+    public static string WeaponTag = "Weapon";
+
     public static void Init()
     {
         camera=Camera.main.transform;

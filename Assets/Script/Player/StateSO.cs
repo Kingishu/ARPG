@@ -61,6 +61,7 @@ public class StateEntity
     [Header("物体控制配置")] public List<Obj_State> ObjStates;
     [Header("顿帧配置")] public List<HitLagConfig> hitLagConfig;
     [Header("径向模糊配置")]public List<RadialBlurConfig> radialBlurConfig;
+    [Header("命中检测配置")] public List<HitConfig> hitConfig;
 }
 [System.Serializable]
 public class PhysicsConfig
@@ -109,4 +110,24 @@ public class RadialBlurConfig
     [Header("触发点")] public float trigger;
     [Header("启用/关闭")]public bool act;
     [Header("平滑时间")] public float lerpTime;
+}
+[System.Serializable]
+public class HitConfig
+{
+    [Header("触发点")] 
+    public float trigger;
+    [Header("结束点")]
+    public float end;
+    [Header("检测方式:0射线检测,1盒子检测")]
+    public int type;
+    [Header("射线起点")] 
+    public string begin; //通过string获得挂点,从而获得物体
+    [Header("射线长度")]
+    public float length;
+    [Header("盒子碰撞器中心点")] 
+    public Vector3 center;
+    [Header("盒子碰撞体边长")]
+    public Vector3 size;
+    [Header("命中特效")] 
+    public string hitObj;
 }
