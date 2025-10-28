@@ -38,73 +38,55 @@ public class ResourcesManager
         return null;
     }
     
-    //受击对象池
-    Stack<GameObject> hit_Effect=new Stack<GameObject>(10);
-    public GameObject CreatHitEffect(string path)
+    Dictionary<string,Stack<GameObject>> effectPool=new Dictionary<string,Stack<GameObject>>();
+
+    public GameObject CreatEffext(string path)
     {
         GameObject effect;
-        if (hit_Effect.Count>0)
+        if (effectPool.ContainsKey(path))
         {
-            effect=hit_Effect.Pop();
-            effect.SetActive(true);
-            CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
+            if (effectPool[path].Count>0)
             {
-                DestroyHitEffect(effect);
-            });
-            return effect;
+                //从其中取
+                effect=effectPool[path].Pop();
+                effect.gameObject.SetActive(true);
+                CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
+                {
+                    DestroyEffect(path,effect);
+                });
+                return effect;
+            }
+            else
+            {
+                //自己创建
+                effect=Instantiate<GameObject>(path);
+                Object.DontDestroyOnLoad(effect);
+                CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
+                {
+                    DestroyEffect(path,effect);
+                });
+                return effect;
+            }
         }
         else
         {
+            effectPool[path]=new Stack<GameObject>();
             effect=Instantiate<GameObject>(path);
             Object.DontDestroyOnLoad(effect);
             CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
             {
-                DestroyHitEffect(effect);
+                DestroyEffect(path,effect);
             });
             return effect;
         }
     }
-    public void DestroyHitEffect(GameObject effect)
+
+    public void DestroyEffect(string path,GameObject effect)
     {
-        if (effect!=null)
+        if (effect != null)
         {
             effect.SetActive(false);
-            hit_Effect.Push(effect);
-        }
-    }
-    
-    //格挡对象池
-    Stack<GameObject> block_Effect=new Stack<GameObject>(10);
-    public GameObject CreatBlockEffect(string path)
-    {
-        GameObject effect;
-        if (block_Effect.Count>0)
-        {
-            effect=block_Effect.Pop();
-            effect.SetActive(true);
-            CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
-            {
-                DestroyBlockEffect(effect);
-            });
-            return effect;
-        }
-        else
-        {
-            effect=Instantiate<GameObject>(path);
-            Object.DontDestroyOnLoad(effect);
-            CoroutineHelper.Instance.ExecuteAfterDelay(2f, () =>
-            {
-                DestroyBlockEffect(effect);
-            });
-            return effect;
-        }
-    }
-    public void DestroyBlockEffect(GameObject effect)
-    {
-        if (effect!=null)
-        {
-            effect.SetActive(false);
-            block_Effect.Push(effect);
+            effectPool[path].Push(effect);
         }
     }
 }

@@ -77,7 +77,7 @@ public class HitService:FSMServiceBase
     {
         if (Physics.Linecast(start,end,out var hitinfo,player.GetEnemyLayer(),QueryTriggerInteraction.Collide))
         {
-            if (hitinfo.collider.CompareTag(GameDefine.WeaponTag))
+            if (hitinfo.collider.CompareTag(GameDefine.WeaponTag) || true)
             {
                 OnBlock(hitinfo);
             }
@@ -138,7 +138,7 @@ public class HitService:FSMServiceBase
         {
             hit_target.Add(fsm.instance_ID);
             //生成特效
-            GameObject hitEffect = ResourcesManager.Instance.CreatHitEffect(config.hitObj);
+            GameObject hitEffect = ResourcesManager.Instance.CreatEffext(config.hitObj);
             hitEffect.SetActive(true);
             //设置特效位置
             if (hitEffect!=null)
@@ -174,7 +174,7 @@ public class HitService:FSMServiceBase
             hit_target.Add(fsm.instance_ID);
             //生成特效
             GameObject blockEffect =
-                ResourcesManager.Instance.CreatBlockEffect(CombatConfig.Instance.Config.block_effect);
+                ResourcesManager.Instance.CreatEffext(CombatConfig.Instance.Config.block_effect);
             if (blockEffect != null)
             {
                 blockEffect.transform.position = hitinfo.point;
