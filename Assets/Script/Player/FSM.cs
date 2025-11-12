@@ -259,6 +259,7 @@ public class FSM : MonoBehaviour
             AddListener(1043, StateEventType.begin, ChangeMoveSpeed);
             AddListener(1043, StateEventType.end, ResetMoveSpeed);
         }
+        
         //AI和敌人共有的
         AddListener(1017,StateEventType.update,OnBashUpdate);
         AddListener(1017,StateEventType.end,OnBashEnd);
@@ -283,7 +284,7 @@ public class FSM : MonoBehaviour
         }
     }
     /// <summary>
-    /// 将玩家的速度切换到走路速度
+    /// 巡逻接口嗲用,将玩家的速度切换到走路速度
     /// </summary>
     private void ChangeMoveSpeed()
     {
@@ -291,17 +292,19 @@ public class FSM : MonoBehaviour
     }
 
     /// <summary>
-    /// 将玩家的速度切换到正常的跑步速度,同时清空寻路
+    /// 寻路结束接口调用,将玩家速度切换到正常速度,并且停止寻路接口.
     /// </summary>
     private void ResetMoveSpeed()
     {
         _speed = 5f;
         navigationService.Stop();
     }
+    //路径查找结束调用,切换到1043寻路状态.
     public void ToPatrol()
     {
         ToNext(1043);
     }
+    //巡逻状态调用,在巡逻结束或者巡逻超时状态下切换到1001
     public void OnPatrolUpdate()
     {
         if (navigationService.IsEnd() || GameTime.time - currentState.beginTime > 5f)
@@ -309,7 +312,7 @@ public class FSM : MonoBehaviour
             ToNext(1001);
         }
     }
-
+    //看向攻击者方法,这里指AI看向玩家
     public void LookAtkTarget()
     {
         if (atk_target==null)
@@ -318,6 +321,7 @@ public class FSM : MonoBehaviour
         }
         _transform.LookTarget(atk_target._transform);
     }
+    //AI在防御中调用方法,每时每刻看向玩家,超时切换待机.
     private void AI_Defencing()
     {
         LookAtkTarget();
@@ -327,7 +331,7 @@ public class FSM : MonoBehaviour
             ToNext(10132);
         }
     }
-
+    //得到敌人和玩家的距离
     private float GetEnemyDistance()
     {
         if (atk_target==null)
@@ -337,6 +341,7 @@ public class FSM : MonoBehaviour
         var dst = Vector3.Distance(_transform.position, atk_target._transform.position);
         return dst;
     }
+    //踱步状态调用,踱步超过3秒,切换到下一个踱步状态,踱步和玩家距离小于3m,进入攻击状态. 调用AIATK
     private void PacingUpdate()
     {
         if (GameTime.time - currentState.beginTime >= 3)
@@ -356,7 +361,7 @@ public class FSM : MonoBehaviour
             }
         }
     }
-
+    //触发踱步接口.
     private void TriggerPacing()
     {
         if (IsDead())
@@ -398,11 +403,12 @@ public class FSM : MonoBehaviour
             }
         }
     }
-
+    //查询玩家是否死亡
     public bool IsDead()
     {
         return att_crn.hp <= 0;
     }
+    //AI在某些状态下超过n秒,自动攻击,由配置表调度.
     public void AutoTriggerAtk_AI()
     {
         if (GameTime.time-currentState.beginTime >currentState.excel_config.active_attack)
@@ -440,6 +446,7 @@ public class FSM : MonoBehaviour
             }
         }
     }
+    //反击策略,当玩家攻击的时候,我们可以执行格挡/躲避/强攻
     private void OnPlayerAtk(FSM atk, SkillEntity skill)
     {
         if (att_crn.hp<=0)
@@ -492,7 +499,7 @@ public class FSM : MonoBehaviour
             }
         }
     }
-
+    //强攻接口
     private void TriggerAtk_AI()
     {
         if (animationService.normalizedTime>=currentState.excel_config.trigger_atk)
@@ -500,8 +507,9 @@ public class FSM : MonoBehaviour
             AIAtk();
         }
     }
-
+    //存储下一次攻击
     private int next_Atk;
+    //AI攻击的核心接口,所有让AI攻击的均调用该方法
     private void AIAtk()
     {
         if (att_crn.hp<=0)
@@ -543,16 +551,17 @@ public class FSM : MonoBehaviour
             }
         }
     }
-
+    //AI寻路结束接口,切换到1042踱步
     private void MoveToPoint()
     {
         ToNext(1042);
     }
-
+    //AI寻路停止接口
     public void NavStop()
     {
         navigationService.Stop();
     }
+    //我们的躲避接口,有冲刺的躲避办法,因此我们需要为冲刺结束后,检查位置进行下一次攻击
     public void OnDashEnd()
     {
         //冲刺结束之后,玩家可能移动,需要重新判定
@@ -568,7 +577,7 @@ public class FSM : MonoBehaviour
             next_Atk = 0;
         }
     }
-
+    //当玩家攻击的时候,调用事件中心的OnPlayerAtk,方便敌人AI监听.
     private void OnSkillBegin()
     {
         GameEvent.OnPlayerAtk.Invoke(this,currentState.skillEntity);
