@@ -2,6 +2,6 @@
 {
     public class GlobalConfig
     {
-        public static int LanguageType = 0;
+        public static int LanguageType=0;
     }
 }

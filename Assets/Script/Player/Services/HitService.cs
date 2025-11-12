@@ -1,5 +1,7 @@
+using Game.Config;
 using System.Collections.Generic;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class HitService:FSMServiceBase
@@ -50,9 +52,9 @@ public class HitService:FSMServiceBase
                 {
                     var crn_id = player.currentState.id;
                     //在两帧之间,进行5次补充
-                    for (int i = 0; i < 5; i++)
+                    for (int i = 0; i < 10; i++)
                     {
-                        Vector3 newEnd = Vector3.Lerp(lastEnd, end, i / 5f);
+                        Vector3 newEnd = Vector3.Lerp(lastEnd, end, i / 10f);
                         LineCast(begin.position,newEnd,config,state);
                         if (crn_id!= player.currentState.id)
                         {
@@ -152,7 +154,15 @@ public class HitService:FSMServiceBase
             //通知敌人进入挨打状态
             if (fsm.att_crn.hp>0)
             {
-                fsm.OnHit((int)direction,player);
+                if (state.skillEntity.add_fly!=null)
+                {
+                    //击飞流程
+                    fsm.OnBash((int)direction, player,state.skillEntity.add_fly,hitinfo.point);
+                }
+                else
+                {
+                    fsm.OnHit((int)direction,player);
+                }
             }
             else
             {

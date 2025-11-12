@@ -118,6 +118,7 @@ public class PhysicsService:FSMServiceBase
     public override void ReStart(PlayerState state)
     {
         base.ReStart(state);
+        ReSetAllExecute();
     }
 
     public override void OnDisable(PlayerState state)

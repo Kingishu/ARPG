@@ -54,7 +54,6 @@ public class Main : MonoBehaviour
                 temp += GameTime.deltaTime;
                 float value=Mathf.Lerp(0f, 0.106f, temp / config.lerpTime);
                 radialBlur.intensity.value=config.act?value:0.106f-value;
-                print("当前的值是"+radialBlur.intensity.value);
                 yield return new WaitForEndOfFrame();
             }
 

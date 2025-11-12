@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Game.Config;
+using Pathfinding;
 using Unity.VisualScripting;
+using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
 public class FSM : MonoBehaviour
@@ -31,6 +33,7 @@ public class FSM : MonoBehaviour
     public int instance_ID;
     public Animator animator;
     public CharacterController characterController;
+    public Seeker _seeker;
     void Awake()
     {
         //获取单位基础表
@@ -41,6 +44,7 @@ public class FSM : MonoBehaviour
 
         animator = _transform.GetChild(0).GetComponent<Animator>();
         characterController = GetComponent<CharacterController>();
+        _seeker = GetComponent<Seeker>();
         
         //属性初始化
         att_base = AttHelper.Instance.Creat(unitEntity.att_id);
@@ -50,6 +54,11 @@ public class FSM : MonoBehaviour
         InitState();
         InitServices();
 
+        if (AI==false)
+        {
+            UnitManager.Instance.player=this;
+        }
+        
         //切换到1001 待机状态
         ToNext(1001);
     }
@@ -66,7 +75,6 @@ public class FSM : MonoBehaviour
 
             ToGround();
         }
-
     }
     
     //拿到配置表
@@ -121,8 +129,6 @@ public class FSM : MonoBehaviour
         //绑定移动输入相关事件
         if (AI == false)
         {
-
-
             foreach (var state in stateData.Values)
             {
                 if (state.excel_config.on_move != null)
@@ -210,9 +216,362 @@ public class FSM : MonoBehaviour
                     AddListener(state.id, StateEventType.begin, DisableCollider);
                     AddListener(state.id, StateEventType.end, EnableCollider);
                 }
+                //当开始攻击或者技能的时候调用
+                if (state.skillEntity!=null)
+                {
+                    AddListener(state.id, StateEventType.begin,OnSkillBegin);
+                }
             }
         }
+        //AI要注册的事件
+        else
+        {
+
+            foreach (var state in stateData.Values) 
+            {
+                if (state.excel_config.active_attack>0)
+                {
+                    AddListener(state.id, StateEventType.update,AutoTriggerAtk_AI);
+                }
+
+                if (state.excel_config.trigger_pacing>0)
+                {
+                    AddListener(state.id, StateEventType.animEnd,TriggerPacing);
+                }
+
+                if (state.excel_config.tag==4)
+                {
+                    AddListener(state.id, StateEventType.update,PacingUpdate);
+                }
+                if (state.excel_config.trigger_patrol > 0)
+                {
+                    AddListener(state.id, StateEventType.update, TriggerPatrol);
+                }
+            }
+            GameEvent.OnPlayerAtk += OnPlayerAtk;
+            AddListener(1014,StateEventType.animEnd,OnDashEnd);
+            AddListener(1042,StateEventType.update,OnMoveToPoint);
+            AddListener(1042,StateEventType.end,NavStop);
+            AddListener(1013,StateEventType.update,AI_Defencing);
+            AddListener(10131,StateEventType.update,AI_Defencing);
+            
+            AddListener(1043, StateEventType.update, OnPatrolUpdate);
+            AddListener(1043, StateEventType.begin, ChangeMoveSpeed);
+            AddListener(1043, StateEventType.end, ResetMoveSpeed);
+        }
+        //AI和敌人共有的
+        AddListener(1017,StateEventType.update,OnBashUpdate);
+        AddListener(1017,StateEventType.end,OnBashEnd);
+        AddListener(1018,StateEventType.update,OnBashUpdate);
+        AddListener(1018,StateEventType.end,OnBashEnd);
         #endregion
+    }
+
+    private void TriggerPatrol()
+    {
+        if (atk_target == null || GetEnemyDistance() > 10f)
+        {
+            //在可以切换到巡视的状态下超过5秒,切换到巡视状态
+            if (GameTime.time - currentState.beginTime >= currentState.excel_config.trigger_patrol)
+            {
+                //进入巡逻
+                float radius = IntEx.Range(6, 8); //3m到6m随机生成
+                float angle = IntEx.Range(1, 360);
+                Vector3 point = _transform.GetOffsetPoint(radius, angle);
+                navigationService.Move(point, ToPatrol);
+            }
+        }
+    }
+    /// <summary>
+    /// 将玩家的速度切换到走路速度
+    /// </summary>
+    private void ChangeMoveSpeed()
+    {
+        _speed = 2.5f;
+    }
+
+    /// <summary>
+    /// 将玩家的速度切换到正常的跑步速度,同时清空寻路
+    /// </summary>
+    private void ResetMoveSpeed()
+    {
+        _speed = 5f;
+        navigationService.Stop();
+    }
+    public void ToPatrol()
+    {
+        ToNext(1043);
+    }
+    public void OnPatrolUpdate()
+    {
+        if (navigationService.IsEnd() || GameTime.time - currentState.beginTime > 5f)
+        {
+            ToNext(1001);
+        }
+    }
+
+    public void LookAtkTarget()
+    {
+        if (atk_target==null)
+        {
+            atk_target = UnitManager.Instance.player;
+        }
+        _transform.LookTarget(atk_target._transform);
+    }
+    private void AI_Defencing()
+    {
+        LookAtkTarget();
+        if (GameTime.time-currentState.beginTime>2.5f)
+        {
+            //格挡超过2.5秒,切换
+            ToNext(10132);
+        }
+    }
+
+    private float GetEnemyDistance()
+    {
+        if (atk_target==null)
+        {
+            atk_target = UnitManager.Instance.player;
+        }
+        var dst = Vector3.Distance(_transform.position, atk_target._transform.position);
+        return dst;
+    }
+    private void PacingUpdate()
+    {
+        if (GameTime.time - currentState.beginTime >= 3)
+        {
+            var nextState = IntEx.Range(1036, 1041);
+            _transform.LookTarget(atk_target._transform);
+            ToNext(nextState);
+        }
+
+        if (atk_target != null)
+        {
+            _transform.LookTarget(atk_target._transform.position);
+            if (GetEnemyDistance() <= 3)
+            {
+                AIAtk();
+                return;
+            }
+        }
+    }
+
+    private void TriggerPacing()
+    {
+        if (IsDead())
+        {
+            return;
+        }
+
+        if (unitEntity.pacing_probability>0)
+        {
+            if (unitEntity.pacing_probability.InRange())
+            {
+                //判定成功,本次处罚踱步
+                var dst = GetEnemyDistance();
+                //位置判断
+                if (atk_target==null)
+                {
+                    
+                    if (dst <= 10f)
+                    {
+                        atk_target = UnitManager.Instance.player;
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                //和角色距离10m之内才能踱步,大于10m我们走巡逻的状态.
+                if (dst<=10)
+                {
+                    //随机获得一个踱步状态,进入改状态
+                    var nextState = IntEx.Range(1036, 1041);
+                    _transform.LookTarget(atk_target._transform);
+                    ToNext(nextState);
+                }
+            }
+            else
+            {
+                return;
+            }
+        }
+    }
+
+    public bool IsDead()
+    {
+        return att_crn.hp <= 0;
+    }
+    public void AutoTriggerAtk_AI()
+    {
+        if (GameTime.time-currentState.beginTime >currentState.excel_config.active_attack)
+        {
+            AIAtk();
+        }
+    }
+    private float _OnMoveToPoint_CheckTime;
+    private void OnMoveToPoint()
+    {
+        if (GameTime.time- _OnMoveToPoint_CheckTime>0.1f)
+        {
+            _OnMoveToPoint_CheckTime=GameTime.time;
+            if (next_Atk!=0 && atk_target!=null)
+            {
+                var dst=GetEnemyDistance();
+                if (dst<=stateData[next_Atk].skillEntity.atk_distance)
+                {
+                    navigationService.Stop();
+                    this._transform.LookTarget(atk_target.transform);
+                    ToNext(next_Atk);
+                    next_Atk=0;
+                }
+                else
+                {
+                    //寻路到终点了,也可能超时了
+                    if (navigationService.IsEnd() || GameTime.time-currentState.beginTime>5f)
+                    {
+                        navigationService.Stop();
+                        ToNext(1001);
+                        next_Atk=0;
+                        AIAtk();
+                    }
+                }
+            }
+        }
+    }
+    private void OnPlayerAtk(FSM atk, SkillEntity skill)
+    {
+        if (att_crn.hp<=0)
+        {
+            return;
+        }
+        //我们只考虑5米之内的敌人,节约性能,不开方,节约性能
+        float sqrDistance=(this._transform.position-atk._transform.position).sqrMagnitude;
+        if (sqrDistance<225)
+        {
+            //是否可以格挡
+            if (unitEntity.block_probability.InRange() && false)
+            {
+                if (currentState.excel_config.on_defense!=null)
+                {
+                    if (CheckConfig(currentState.excel_config.on_defense))
+                    {
+                        //看向攻击者
+                        _transform.LookTarget(atk._transform);
+                        //切换格挡状态
+                        bool result=ToNext((int)currentState.excel_config.on_defense[2]);
+                        //切换成功,退出本次响应
+                        if (result)
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
+            //闪避
+            if (unitEntity.dodge_probability.InRange() && false)
+            {
+                if (currentState.excel_config.trigger_dodge>0)
+                {
+                    int nextState = IntEx.Range(1032, 1035);
+                    bool result = ToNext(nextState);
+                    if (result)
+                    {
+                        return;
+                    }
+                }
+            }
+            //主角攻击的时候,我们强攻
+            if (unitEntity.atk_probability.InRange()||true) 
+            {
+                if (currentState.excel_config.first_strike>0)
+                {
+                    TriggerAtk_AI();
+                }
+            }
+        }
+    }
+
+    private void TriggerAtk_AI()
+    {
+        if (animationService.normalizedTime>=currentState.excel_config.trigger_atk)
+        {
+            AIAtk();
+        }
+    }
+
+    private int next_Atk;
+    private void AIAtk()
+    {
+        if (att_crn.hp<=0)
+        {
+            return;
+        }
+        next_Atk = IntEx.Range(1005, 1012);
+        if (stateData[next_Atk].skillEntity.atk_distance>0)
+        {
+            if (atk_target==null)
+            {
+                atk_target = UnitManager.Instance.player;
+            }
+            //得到距离的平方
+            float sqrDistance=(this._transform.position-atk_target._transform.position).sqrMagnitude;
+            //如果距离大于技能攻击距离
+            if (sqrDistance >= Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance,2))
+            {
+                //想办法靠近角色
+                if (50.InRange() && false)
+                {
+                    //冲刺
+                    _transform.LookTarget(atk_target._transform); //看向角色
+                    ToNext(1014);//冲刺过去
+                }
+                else
+                {
+                    
+                    if (navigationService.state==0)
+                    {
+                        navigationService.Move(atk_target._transform.position,MoveToPoint);
+                    }
+                }
+            }
+            else
+            {
+                _transform.LookTarget(atk_target._transform);
+                ToNext(next_Atk);
+            }
+        }
+    }
+
+    private void MoveToPoint()
+    {
+        ToNext(1042);
+    }
+
+    public void NavStop()
+    {
+        navigationService.Stop();
+    }
+    public void OnDashEnd()
+    {
+        //冲刺结束之后,玩家可能移动,需要重新判定
+        float sqrDistance=(this._transform.position-atk_target._transform.position).sqrMagnitude;
+        if (sqrDistance >=  Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance,2))
+        {
+            AIAtk();
+        }
+        else
+        {
+            _transform.LookTarget(atk_target._transform);
+            ToNext(next_Atk);
+            next_Atk = 0;
+        }
+    }
+
+    private void OnSkillBegin()
+    {
+        GameEvent.OnPlayerAtk.Invoke(this,currentState.skillEntity);
     }
 
     private void EnableCollider()
@@ -486,19 +845,23 @@ public class FSM : MonoBehaviour
     /// 切换状态的方法
     /// </summary>
     /// <param name="next">下一个状态的id</param>
-    public void ToNext(int next)
+    public bool ToNext(int next)
     {
         if (stateData.ContainsKey(next))
         {
-            //info信息显示
-            if (currentState != null)
-            {
-              //  Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
-            }
-            else
-            {
-               // Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
-            }
+            
+                
+                //info信息显示
+                if (currentState != null)
+                {
+                    Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
+                }
+                else
+                {
+                    Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
+                }
+                
+            
             //切换逻辑
             if (currentState != null)
             {
@@ -512,7 +875,10 @@ public class FSM : MonoBehaviour
 
             DoStateEvent(currentState.id, StateEventType.begin);
             ServicesOnBegin();
+            return true;
         }
+
+        return false;
     }
 
     Dictionary<int, Dictionary<StateEventType, List<Action>>> actions = new();
@@ -592,6 +958,7 @@ public class FSM : MonoBehaviour
     HitlagService hitlagService;
     RadialBlurService radialBlurService;
     HitService hitService;
+    NavigationService navigationService;
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
@@ -600,6 +967,7 @@ public class FSM : MonoBehaviour
         hitlagService=AddService<HitlagService>();
         radialBlurService=AddService<RadialBlurService>();
         hitService=AddService<HitService>();
+        navigationService=AddService<NavigationService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数
@@ -805,6 +1173,46 @@ public class FSM : MonoBehaviour
         {
             ToNext(currentState.excel_config.be_block[0]);
         }
+    }
+
+    public float GetPlayerSpeed()
+    {
+        return _speed;
+    }
+
+    private Vector3 bash_add_fly;
+    private Vector3 bash_fly_dir;
+    public void OnBash(int direction, FSM player, float[] skillEntityAddFly, Vector3 hitinfoPoint)
+    {
+        bash_add_fly=new Vector3(skillEntityAddFly[0],skillEntityAddFly[1],skillEntityAddFly[2]);
+        int dir=direction>0?0:1;
+        bash_fly_dir=(this._transform.position-atk_target._transform.position).normalized;
+        if (currentState.excel_config.on_bash!=null)
+        {
+            ToNext(currentState.excel_config.on_bash[dir]);
+        }
+    }
+
+    public void OnBashUpdate()
+    {
+        //击飞时长0.2   0.1上升,0.1下降
+        float time = GameTime.time - currentState.beginTime;
+        if (time < 0.1f)
+        {
+            var d = bash_fly_dir * (bash_add_fly.z / 0.2f);
+            d.y = bash_add_fly.y / 0.2f;
+            Move(d, false, add_Gravity: false, do_ground_check: false);
+        }
+        else if (time <= 0.2f)
+        {
+            var d = bash_fly_dir * (bash_add_fly.z / 0.2f);
+            d.y = -(bash_add_fly.y / 0.2f);
+            Move(d, false, add_Gravity: false, do_ground_check: false);
+        }
+    }
+    public void OnBashEnd()
+    {
+        groundCheck = true;
     }
 }
 public class PlayerState
