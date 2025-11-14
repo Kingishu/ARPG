@@ -89,4 +89,24 @@ public class ResourcesManager
             effectPool[path].Push(effect);
         }
     }
+
+    private Stack<EnemyHUD> enemy_HUD = new Stack<EnemyHUD>();
+    public EnemyHUD CreateEnemyHUD()
+    {
+        if (enemy_HUD.Count>0)
+        {
+            return enemy_HUD.Pop();
+        }
+        else
+        {
+            var go = Instantiate<GameObject>("UI/HUD/Enemy_HUD");
+            return go.GetComponent<EnemyHUD>();
+        }
+    }
+
+    public void DestroyEnemyHUD(EnemyHUD hud)
+    {
+        hud.gameObject.SetActive(false);
+        enemy_HUD.Push(hud);
+    }
 }

@@ -268,6 +268,11 @@ public class FSM : MonoBehaviour
         #endregion
     }
 
+    #region AI逻辑
+
+    
+
+    
     private void TriggerPatrol()
     {
         if (atk_target == null || GetEnemyDistance() > 10f)
@@ -582,7 +587,7 @@ public class FSM : MonoBehaviour
     {
         GameEvent.OnPlayerAtk.Invoke(this,currentState.skillEntity);
     }
-
+    #endregion
     private void EnableCollider()
     {
         characterController.excludeLayers = 0;
@@ -1082,6 +1087,7 @@ public class FSM : MonoBehaviour
         }
     }
 
+    private EnemyHUD enemyHUD;
     public void UpdateHP_OnHit(int damage)
     {
         att_crn.hp-=damage;
@@ -1097,14 +1103,29 @@ public class FSM : MonoBehaviour
             {
                  //更新BOss血条
             }
-            else if (unitEntity.type==1 || unitEntity.type==2)
+            else if (unitEntity.type==1 || unitEntity.type==2||unitEntity.type==0)
             {
-               //更新小兵和精英怪的血条 
+                UpdateEnemyHud();
             }
         }
         else
         {
             //更新主角血条
+        }
+    }
+
+    private void UpdateEnemyHud()
+    {
+        if (AI)
+        {
+            if (unitEntity.type == 1 || unitEntity.type == 2 || unitEntity.type == 0)
+            {
+                if (enemyHUD==null)
+                {
+                    enemyHUD = ResourcesManager.Instance.CreateEnemyHUD();
+                }
+                enemyHUD.UpdateHP(att_crn.hp/att_base.hp,this._transform,unitEntity.info);
+            }
         }
     }
 
@@ -1166,6 +1187,7 @@ public class FSM : MonoBehaviour
 /// <exception cref="NotImplementedException"></exception>
     public void OnBlockSucces(FSM atk)
     {
+        UpdateEnemyHud();
         if (currentState.excel_config.on_block_succes!=0)
         {
             ToNext(currentState.excel_config.on_block_succes);

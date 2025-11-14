@@ -125,7 +125,7 @@ GameObject:
   - component: {fileID: 9095434228537138061}
   - component: {fileID: 4865531903624167143}
   - component: {fileID: 7141659595131032717}
-  - component: {fileID: -794199446707821003}
+  - component: {fileID: 2481073660634577587}
   m_Layer: 5
   m_Name: Enemy_HUD
   m_TagString: Untagged
@@ -152,7 +152,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: -3.402, y: -4.162, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 2.198, y: 13.619}
+  m_AnchoredPosition: {x: 2.197998, y: 13.619019}
   m_SizeDelta: {x: 20, y: 15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!223 &9095434228537138061
@@ -200,7 +200,7 @@ MonoBehaviour:
   m_FallbackScreenDPI: 96
   m_DefaultSpriteDPI: 96
   m_DynamicPixelsPerUnit: 1
-  m_PresetInfoIsWorld: 1
+  m_PresetInfoIsWorld: 0
 --- !u!114 &7141659595131032717
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -218,7 +218,7 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 247
---- !u!114 &-794199446707821003
+--- !u!114 &2481073660634577587
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -227,16 +227,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 2460663350731797778}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ab1ab0f155fb15d469ea678146006ee0, type: 3}
+  m_Script: {fileID: 11500000, guid: 05b1268dce900244baeb073ab0345466, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  hp_top: {fileID: 0}
+  hp_middle: {fileID: 0}
+  middle_speed: 1
+  hp: -1
+  target: {fileID: 0}
   name_text: {fileID: 0}
   offset: {x: 0, y: 1.8, z: 0}
-  boss_hp_top: {fileID: 0}
-  boss_hp_middle: {fileID: 0}
-  middle_speed: 1
-  boss_hp: -1
-  target: {fileID: 0}
 --- !u!1 &2871208139664504973
 GameObject:
   m_ObjectHideFlags: 0
