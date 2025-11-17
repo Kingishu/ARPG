@@ -15,11 +15,15 @@ public class Main : MonoBehaviour
         GameEvent.DoHitlag += DoHitLag;
         GameEvent.DoRadialBlur += DoRadialBlurConfig;
         GameDefine.Init();
+        //UI系统初始化
+        ViewManager.Instance.Init();
     }
 
     private void Update()
     {
         GameTime.Update();
+        //UI的update循环
+        ViewManager.Instance.Update();
     }
 
     #region 镜像模糊

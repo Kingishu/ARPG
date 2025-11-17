@@ -10,4 +10,6 @@ public class GameEvent
     public static Action<RadialBlurConfig> DoRadialBlur;
     //当玩家攻击的时候,需要执行的配置
     public static Action<FSM,SkillEntity> OnPlayerAtk;
+    //UI重新排序
+    public static Action ResetSortOrder;
 }
