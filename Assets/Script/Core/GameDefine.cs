@@ -16,7 +16,7 @@ public class GameDefine
 
     public static void Init()
     {
-        camera=Camera.main.transform;
+        camera = GameObject.Find("Main").transform.Find("Camera").transform;
         Ground_LayerMask=LayerMask.GetMask("Default");
         Enemy_LayerMask=LayerMask.GetMask("Enemy");
         Player_LayerMask = LayerMask.GetMask("Player");

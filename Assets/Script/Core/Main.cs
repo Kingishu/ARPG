@@ -6,8 +6,14 @@ using UnityEngine.Rendering;
 public class Main : MonoBehaviour
 {
     private void Awake()
-    {
+    { 
         InitSystem();
+        GameObject.DontDestroyOnLoad(this);
+        //Controller系统初始化,涉及到GetComponent,放在awake当中
+        GameSystem.Instance.SceneController=GetComponent<SceneController>();
+        GameSystem.Instance.CameraController=this.transform.Find("Camera").GetComponent<UCameraController>();
+        //显示登录界面
+        LoginViewController.Instance.Open();
     }
 
     private void InitSystem()
@@ -15,6 +21,7 @@ public class Main : MonoBehaviour
         GameEvent.DoHitlag += DoHitLag;
         GameEvent.DoRadialBlur += DoRadialBlurConfig;
         GameDefine.Init();
+       
         //UI系统初始化
         ViewManager.Instance.Init();
     }
@@ -27,7 +34,6 @@ public class Main : MonoBehaviour
     }
 
     #region 镜像模糊
-
     private Volume volume;
     private RadialBlur radialBlur;
     private Coroutine radialBlurCoroutine;
@@ -74,10 +80,7 @@ public class Main : MonoBehaviour
 
     #endregion
     
-    
-    
     #region  顿帧效果
-
     public void DoHitLag(int frame,bool lerp)
     {
         if (hitLagCoroutine!=null)

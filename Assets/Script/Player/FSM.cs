@@ -585,7 +585,7 @@ public class FSM : MonoBehaviour
     //当玩家攻击的时候,调用事件中心的OnPlayerAtk,方便敌人AI监听.
     private void OnSkillBegin()
     {
-        GameEvent.OnPlayerAtk.Invoke(this,currentState.skillEntity);
+        GameEvent.OnPlayerAtk?.Invoke(this,currentState.skillEntity);
     }
     #endregion
     private void EnableCollider()

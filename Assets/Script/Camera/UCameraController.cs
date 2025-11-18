@@ -4,6 +4,7 @@ using UnityEngine.Serialization;
 
 public class UCameraController : MonoBehaviour
 {
+    
     [Header("跟随目标")]
     public Transform target;
     [Header("跟随差值")] 
@@ -22,6 +23,9 @@ public class UCameraController : MonoBehaviour
     private float distance;
     //Controller
     private CharacterController characterController;
+    //增加一个状态机
+    private int state = 0;//0空闲 1跟随
+    
     void Start()
     {
         if (target!=null)
@@ -33,10 +37,29 @@ public class UCameraController : MonoBehaviour
         }
     }
 
+    public void SetTarget(Transform target)
+    {
+        state = 1;
+        this.target = target;
+        if (target!=null)
+        {
+            Cursor.lockState=CursorLockMode.Locked;
+            Cursor.visible=false;
+            characterController = target.GetComponent<CharacterController>();
+            high_offset = characterController.center * 1.75f;
+        }
+        Follow(false);
+        this.gameObject.SetActive(true);
+    }
     // Update is called once per frame
     private void LateUpdate()
     {
-        if (target!=null)
+        Follow();
+    }
+
+    private void Follow(bool lerp=true)
+    {
+        if (target!=null && state==1)
         {
             xMouse += UInput.GetAxis_Mouse_X();
             yMouse -= UInput.GetAxis_Mouse_Y();
@@ -49,8 +72,17 @@ public class UCameraController : MonoBehaviour
             //计算一下位置
             Vector3 targetPosition=target.position+targetRotation*new Vector3(0,0,-distance)+high_offset;
             //平滑过度
-            transform.position=Vector3.Lerp(transform.position,targetPosition,GameTime.deltaTime*positionSpeed);
-            transform.rotation=Quaternion.Slerp(transform.rotation,targetRotation,GameTime.deltaTime*rotationSpeed);
+            if (lerp)
+            {
+                transform.position=Vector3.Lerp(transform.position,targetPosition,GameTime.deltaTime*positionSpeed);
+                transform.rotation=Quaternion.Slerp(transform.rotation,targetRotation,GameTime.deltaTime*rotationSpeed);
+            }
+            else
+            {
+                transform.position = targetPosition;
+                transform.rotation = targetRotation;
+            }
+            
         }
     }
 }
