@@ -1,5 +1,6 @@
 using Game.Config;
 using Sirenix.OdinInspector;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -12,6 +13,7 @@ public class StateSO:ScriptableObject,ISerializationCallbackReceiver
     //在保存之前
     public void OnBeforeSerialize()
     {
+        
     }
     //在加载之后
     public void OnAfterDeserialize()
@@ -57,7 +59,6 @@ public class StateEntity
     public bool IgnoreCollision;
     [Header("物理位移配置")]
     public List<PhysicsConfig> physicsConfig;
-
     [Header("物体控制配置")] public List<Obj_State> ObjStates;
     [Header("顿帧配置")] public List<HitLagConfig> hitLagConfig;
     [Header("径向模糊配置")]public List<RadialBlurConfig> radialBlurConfig;

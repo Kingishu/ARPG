@@ -9,15 +9,13 @@ namespace Game.Config
 
         static UnitData()
         {
-            entityDic = new Dictionary<int, UnitEntity>(4);
+            entityDic = new Dictionary<int, UnitEntity>(3);
              UnitEntity e0 = new UnitEntity(1001,@"玄影剑姬",0,0,1,10011,10012,10013,10014,10015,10016,10017,10018,80,60,30,50,30);
             entityDic.Add(e0.id, e0);
-             UnitEntity e1 = new UnitEntity(1002,@"红焰邪姬",1,1,2,20011,20012,20013,20014,20015,20016,20017,20018,80,60,30,50,20);
+             UnitEntity e1 = new UnitEntity(1002,@"红焰邪姬",1,1,2,20011,20012,20013,20014,20015,20016,20017,20018,0,50,30,90,70);
             entityDic.Add(e1.id, e1);
-             UnitEntity e2 = new UnitEntity(1003,@"独目锤影",3,1,2,30011,30012,30013,30014,30015,30016,30017,30018,80,60,30,50,20);
+             UnitEntity e2 = new UnitEntity(1003,@"独目锤影",3,1,3,30011,30012,30013,30014,30015,30016,30017,30018,40,0,60,1,20);
             entityDic.Add(e2.id, e2);
-             UnitEntity e3 = new UnitEntity(1004,@"小兵C",3,1,2,20011,20012,20013,20014,20015,20016,20017,20018,80,60,30,50,20);
-            entityDic.Add(e3.id, e3);
 
         }
 

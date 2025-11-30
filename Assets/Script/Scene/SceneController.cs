@@ -35,10 +35,13 @@ public class SceneController : MonoBehaviour
             yield return null;
         }
         yield return null;
+        //关闭加载页面
         LoadingViewController.Instance.Close();
         //创建角色
         GameObject player=UnitManager.Instance.CreatePlayer();
         //控制摄像机
         GameSystem.Instance.CameraController.SetTarget(player.transform);
+        //打开主页面
+        MainViewController.Instance.Open();
     }
 }

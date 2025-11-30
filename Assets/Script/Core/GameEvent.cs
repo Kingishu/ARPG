@@ -1,6 +1,7 @@
 using Game.Config;
 using System;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class GameEvent
 {
@@ -12,4 +13,6 @@ public class GameEvent
     public static Action<FSM,SkillEntity> OnPlayerAtk;
     //UI重新排序
     public static Action ResetSortOrder;
+    //UI事件  EventSystem
+    public static EventSystem EventSystem;
 }

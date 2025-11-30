@@ -120,6 +120,7 @@ public class HitService:FSMServiceBase
     
     private void OnHit(HitConfig config, PlayerState state, RaycastHit hitinfo)
     {
+        //这个fsm就是敌人
         FSM fsm=hitinfo.collider.GetComponentInParent<FSM>();
         //计算敌人和玩家的前后关系
         var direction = fsm.transform.ForwardOrBack(player._transform.position);

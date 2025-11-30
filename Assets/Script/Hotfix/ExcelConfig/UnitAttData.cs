@@ -10,11 +10,11 @@ namespace Game.Config
         static UnitAttData()
         {
             entityDic = new Dictionary<int, UnitAttEntity>(3);
-             UnitAttEntity e0 = new UnitAttEntity(1,10000f,100f,100f,20f,100f,30f,1.5f,0.8f);
+             UnitAttEntity e0 = new UnitAttEntity(1,150f,15f,5f,4f,2f,5f,1.5f,0f);
             entityDic.Add(e0.id, e0);
-             UnitAttEntity e1 = new UnitAttEntity(2,15000f,100f,100f,20f,100f,50f,1.5f,0.8f);
+             UnitAttEntity e1 = new UnitAttEntity(2,80f,25f,0f,1f,1f,40f,2f,0f);
             entityDic.Add(e1.id, e1);
-             UnitAttEntity e2 = new UnitAttEntity(3,23000f,100f,100f,20f,100f,30f,1.5f,0.8f);
+             UnitAttEntity e2 = new UnitAttEntity(3,800f,35f,0f,8f,5f,5f,1.5f,0f);
             entityDic.Add(e2.id, e2);
 
         }

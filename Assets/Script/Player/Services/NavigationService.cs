@@ -28,7 +28,7 @@ public class NavigationService : FSMServiceBase
     private Vector3 _point; //目的地
     public Vector3 _pathLast;
     public Action _success;
-
+    //外部调用寻路的核心接口
     public void Move(Vector3 position,Action success)
     {
         if (state==0||(state==1 && position!=_point))

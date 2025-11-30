@@ -71,12 +71,12 @@ public class EnemyHUD : MonoBehaviour
         if (hp_top.fillAmount > hp)
         {
             //让血条变小
-            SetFillAmount(hp_top, hp, middle_speed);
+            hp_top.SetFillAmount(hp, middle_speed);
         }
         else if(hp_top.fillAmount < hp)
         {
             //填充血条
-            SetFillAmount(hp_top, hp, middle_speed/2);
+            hp_top.SetFillAmount(hp, middle_speed/2);
         }
         //注意事项:在血条较小的时候,top先减小,中间层在减小
         //血条变大的时候,中间层先变大,top在变大
@@ -84,12 +84,12 @@ public class EnemyHUD : MonoBehaviour
         if (hp_middle.fillAmount > hp)
         {
             //让中间血条变小
-            SetFillAmount(hp_middle, hp, middle_speed/2);
+            hp_middle.SetFillAmount( hp, middle_speed/2);
         }
         else if(hp_middle.fillAmount < hp)
         {
             //填充中间血条
-            SetFillAmount(hp_middle, hp, middle_speed);
+            hp_middle.SetFillAmount(hp, middle_speed);
         }
 
         if (hp_top.fillAmount==hp && hp_middle.fillAmount==hp)
@@ -98,28 +98,5 @@ public class EnemyHUD : MonoBehaviour
         }
     }
 
-    public bool SetFillAmount(Image image,float v,float speed)
-    {
-        if (image.fillAmount>v)
-        {
-            float temp=image.fillAmount-GameTime.deltaTime*speed;
-            if (temp<v)
-            {
-                temp = v;
-            }
-            image.fillAmount=temp;
-        }
-        else if (image.fillAmount<v)
-        {
-            float temp=image.fillAmount+GameTime.deltaTime*speed;
-            if (temp>v)
-            {
-                temp = v;
-            }
-            image.fillAmount=temp;
-        }
-        //浮点数相等比较有风险,用Approximately代替
-        //等同于 return image.fillAmount==v;
-        return Mathf.Approximately(image.fillAmount, v);
-    }
+   
 }

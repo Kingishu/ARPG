@@ -10,9 +10,9 @@ public class FSM : MonoBehaviour
 {
     //角色ID
     [Header("角色属性表ID")]
-    public int ID=1001;
+    public int ID = 1001;
     [Header("移动速度")]
-    public float _speed=5f;
+    public float _speed = 5f;
 
     [Header("角色是否为AI")] public bool AI;
     //单位基础表
@@ -45,23 +45,46 @@ public class FSM : MonoBehaviour
         animator = _transform.GetChild(0).GetComponent<Animator>();
         characterController = GetComponent<CharacterController>();
         _seeker = GetComponent<Seeker>();
-        
+
         //属性初始化
         att_base = AttHelper.Instance.Creat(unitEntity.att_id);
-        att_crn=AttHelper.Instance.Creat(att_base);
-        
+        att_crn = AttHelper.Instance.Creat(att_base);
+
         //状态初始化
         InitState();
         InitServices();
 
-        if (AI==false)
+        if (AI == false)
         {
-            UnitManager.Instance.player=this;
+            UnitManager.Instance.player = this;
         }
-        
+
         //切换到1001 待机状态
         ToNext(1001);
     }
+
+    private void OnEnable()
+    {
+        if (AI)
+        {
+            if (unitEntity.type == 3)
+            {
+                MainViewController.Instance.EnableBossHP(true, unitEntity.info);
+            }
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (AI)
+        {
+            if (unitEntity.type == 3)
+            {
+                MainViewController.Instance.EnableBossHP(false, unitEntity.info);
+            }
+        }
+    }
+
     void Update()
     {
         if (currentState != null)
@@ -76,7 +99,7 @@ public class FSM : MonoBehaviour
             ToGround();
         }
     }
-    
+
     //拿到配置表
     private StateSO anmConfig;
     //初始化的方法
@@ -85,13 +108,13 @@ public class FSM : MonoBehaviour
         //拿到当前角色的配置表
         anmConfig = Resources.Load<StateSO>($"StateConfig/{ID}");
         //字典缓存配置信息
-        Dictionary<int,StateEntity> states = new Dictionary<int, StateEntity>();
+        Dictionary<int, StateEntity> states = new Dictionary<int, StateEntity>();
         //添加进入字典
         foreach (var item in anmConfig.states)
         {
             states[item.id] = item;
         }
-        
+
         //对状态中的动画长度进行初始化
         var clips = animator.runtimeAnimatorController.animationClips;
         Dictionary<string, float> clipsLength = new();
@@ -106,10 +129,10 @@ public class FSM : MonoBehaviour
                 PlayerState newState = new PlayerState();
                 newState.id = state.Key;
                 newState.excel_config = state.Value;
-                newState.stateEntity=states[newState.id];
-                if (clipsLength.TryGetValue(newState.excel_config.anm_name,out var length))
+                newState.stateEntity = states[newState.id];
+                if (clipsLength.TryGetValue(newState.excel_config.anm_name, out var length))
                 {
-                    newState.clipLength=length;
+                    newState.clipLength = length;
                 }
                 stateData.Add(newState.id, newState);
             }
@@ -124,7 +147,7 @@ public class FSM : MonoBehaviour
         stateData[1010].skillEntity = SkillData.Get(unitEntity.skill2);
         stateData[1011].skillEntity = SkillData.Get(unitEntity.skill3);
         stateData[1012].skillEntity = SkillData.Get(unitEntity.skill4);
-        
+
         #region 事件绑定
         //绑定移动输入相关事件
         if (AI == false)
@@ -217,9 +240,10 @@ public class FSM : MonoBehaviour
                     AddListener(state.id, StateEventType.end, EnableCollider);
                 }
                 //当开始攻击或者技能的时候调用
-                if (state.skillEntity!=null)
+                if (state.skillEntity != null)
                 {
-                    AddListener(state.id, StateEventType.begin,OnSkillBegin);
+                    AddListener(state.id, StateEventType.begin, OnSkillBegin);
+                    AddListener(state.id, StateEventType.begin, SetSkillCD);
                 }
             }
         }
@@ -227,21 +251,21 @@ public class FSM : MonoBehaviour
         else
         {
 
-            foreach (var state in stateData.Values) 
+            foreach (var state in stateData.Values)
             {
-                if (state.excel_config.active_attack>0)
+                if (state.excel_config.active_attack > 0)
                 {
-                    AddListener(state.id, StateEventType.update,AutoTriggerAtk_AI);
+                    AddListener(state.id, StateEventType.update, AutoTriggerAtk_AI);
                 }
 
-                if (state.excel_config.trigger_pacing>0)
+                if (state.excel_config.trigger_pacing > 0)
                 {
-                    AddListener(state.id, StateEventType.animEnd,TriggerPacing);
+                    AddListener(state.id, StateEventType.animEnd, TriggerPacing);
                 }
 
-                if (state.excel_config.tag==4)
+                if (state.excel_config.tag == 4)
                 {
-                    AddListener(state.id, StateEventType.update,PacingUpdate);
+                    AddListener(state.id, StateEventType.update, PacingUpdate);
                 }
                 if (state.excel_config.trigger_patrol > 0)
                 {
@@ -249,30 +273,50 @@ public class FSM : MonoBehaviour
                 }
             }
             GameEvent.OnPlayerAtk += OnPlayerAtk;
-            AddListener(1014,StateEventType.animEnd,OnDashEnd);
-            AddListener(1042,StateEventType.update,OnMoveToPoint);
-            AddListener(1042,StateEventType.end,NavStop);
-            AddListener(1013,StateEventType.update,AI_Defencing);
-            AddListener(10131,StateEventType.update,AI_Defencing);
-            
+            AddListener(1014, StateEventType.animEnd, OnDashEnd);
+            AddListener(1042, StateEventType.update, OnMoveToPoint);
+            AddListener(1042, StateEventType.end, NavStop);
+            AddListener(1013, StateEventType.update, AI_Defencing);
+            AddListener(10131, StateEventType.update, AI_Defencing);
+
             AddListener(1043, StateEventType.update, OnPatrolUpdate);
             AddListener(1043, StateEventType.begin, ChangeMoveSpeed);
             AddListener(1043, StateEventType.end, ResetMoveSpeed);
         }
-        
+
         //AI和敌人共有的
-        AddListener(1017,StateEventType.update,OnBashUpdate);
-        AddListener(1017,StateEventType.end,OnBashEnd);
-        AddListener(1018,StateEventType.update,OnBashUpdate);
-        AddListener(1018,StateEventType.end,OnBashEnd);
+        AddListener(1017, StateEventType.update, OnBashUpdate);
+        AddListener(1017, StateEventType.end, OnBashEnd);
+        AddListener(1018, StateEventType.update, OnBashUpdate);
+        AddListener(1018, StateEventType.end, OnBashEnd);
         #endregion
+    }
+
+    private void SetSkillCD()
+    {
+        if (currentState.id == 1009)
+        {
+            MainViewController.Instance.SetSkillCD(1, currentState.skillEntity.cd);
+        }
+        else if (currentState.id == 1010)
+        {
+            MainViewController.Instance.SetSkillCD(2, currentState.skillEntity.cd);
+        }
+        else if (currentState.id == 1011)
+        {
+            MainViewController.Instance.SetSkillCD(3, currentState.skillEntity.cd);
+        }
+        else if (currentState.id == 1012)
+        {
+            MainViewController.Instance.SetSkillCD(4, currentState.skillEntity.cd);
+        }
     }
 
     #region AI逻辑
 
-    
 
-    
+
+
     private void TriggerPatrol()
     {
         if (atk_target == null || GetEnemyDistance() > 10f)
@@ -320,7 +364,7 @@ public class FSM : MonoBehaviour
     //看向攻击者方法,这里指AI看向玩家
     public void LookAtkTarget()
     {
-        if (atk_target==null)
+        if (atk_target == null)
         {
             atk_target = UnitManager.Instance.player;
         }
@@ -330,7 +374,7 @@ public class FSM : MonoBehaviour
     private void AI_Defencing()
     {
         LookAtkTarget();
-        if (GameTime.time-currentState.beginTime>2.5f)
+        if (GameTime.time - currentState.beginTime > 2.5f)
         {
             //格挡超过2.5秒,切换
             ToNext(10132);
@@ -339,7 +383,7 @@ public class FSM : MonoBehaviour
     //得到敌人和玩家的距离
     private float GetEnemyDistance()
     {
-        if (atk_target==null)
+        if (atk_target == null)
         {
             atk_target = UnitManager.Instance.player;
         }
@@ -374,16 +418,16 @@ public class FSM : MonoBehaviour
             return;
         }
 
-        if (unitEntity.pacing_probability>0)
+        if (unitEntity.pacing_probability > 0)
         {
             if (unitEntity.pacing_probability.InRange())
             {
                 //判定成功,本次处罚踱步
                 var dst = GetEnemyDistance();
                 //位置判断
-                if (atk_target==null)
+                if (atk_target == null)
                 {
-                    
+
                     if (dst <= 10f)
                     {
                         atk_target = UnitManager.Instance.player;
@@ -394,7 +438,7 @@ public class FSM : MonoBehaviour
                     }
                 }
                 //和角色距离10m之内才能踱步,大于10m我们走巡逻的状态.
-                if (dst<=10)
+                if (dst <= 10)
                 {
                     //随机获得一个踱步状态,进入改状态
                     var nextState = IntEx.Range(1036, 1041);
@@ -416,7 +460,7 @@ public class FSM : MonoBehaviour
     //AI在某些状态下超过n秒,自动攻击,由配置表调度.
     public void AutoTriggerAtk_AI()
     {
-        if (GameTime.time-currentState.beginTime >currentState.excel_config.active_attack)
+        if (GameTime.time - currentState.beginTime > currentState.excel_config.active_attack)
         {
             AIAtk();
         }
@@ -424,27 +468,27 @@ public class FSM : MonoBehaviour
     private float _OnMoveToPoint_CheckTime;
     private void OnMoveToPoint()
     {
-        if (GameTime.time- _OnMoveToPoint_CheckTime>0.1f)
+        if (GameTime.time - _OnMoveToPoint_CheckTime > 0.1f)
         {
-            _OnMoveToPoint_CheckTime=GameTime.time;
-            if (next_Atk!=0 && atk_target!=null)
+            _OnMoveToPoint_CheckTime = GameTime.time;
+            if (next_Atk != 0 && atk_target != null)
             {
-                var dst=GetEnemyDistance();
-                if (dst<=stateData[next_Atk].skillEntity.atk_distance)
+                var dst = GetEnemyDistance();
+                if (dst <= stateData[next_Atk].skillEntity.atk_distance)
                 {
                     navigationService.Stop();
                     this._transform.LookTarget(atk_target.transform);
                     ToNext(next_Atk);
-                    next_Atk=0;
+                    next_Atk = 0;
                 }
                 else
                 {
                     //寻路到终点了,也可能超时了
-                    if (navigationService.IsEnd() || GameTime.time-currentState.beginTime>5f)
+                    if (navigationService.IsEnd() || GameTime.time - currentState.beginTime > 5f)
                     {
                         navigationService.Stop();
                         ToNext(1001);
-                        next_Atk=0;
+                        next_Atk = 0;
                         AIAtk();
                     }
                 }
@@ -454,25 +498,25 @@ public class FSM : MonoBehaviour
     //反击策略,当玩家攻击的时候,我们可以执行格挡/躲避/强攻
     private void OnPlayerAtk(FSM atk, SkillEntity skill)
     {
-        if (att_crn.hp<=0)
+        if (att_crn.hp <= 0)
         {
             return;
         }
         //我们只考虑5米之内的敌人,节约性能,不开方,节约性能
-        float sqrDistance=(this._transform.position-atk._transform.position).sqrMagnitude;
-        if (sqrDistance<225)
+        float sqrDistance = (this._transform.position - atk._transform.position).sqrMagnitude;
+        if (sqrDistance < 225)
         {
             //是否可以格挡
             if (unitEntity.block_probability.InRange() && false)
             {
-                if (currentState.excel_config.on_defense!=null)
+                if (currentState.excel_config.on_defense != null)
                 {
                     if (CheckConfig(currentState.excel_config.on_defense))
                     {
                         //看向攻击者
                         _transform.LookTarget(atk._transform);
                         //切换格挡状态
-                        bool result=ToNext((int)currentState.excel_config.on_defense[2]);
+                        bool result = ToNext((int)currentState.excel_config.on_defense[2]);
                         //切换成功,退出本次响应
                         if (result)
                         {
@@ -484,7 +528,7 @@ public class FSM : MonoBehaviour
             //闪避
             if (unitEntity.dodge_probability.InRange() && false)
             {
-                if (currentState.excel_config.trigger_dodge>0)
+                if (currentState.excel_config.trigger_dodge > 0)
                 {
                     int nextState = IntEx.Range(1032, 1035);
                     bool result = ToNext(nextState);
@@ -495,9 +539,9 @@ public class FSM : MonoBehaviour
                 }
             }
             //主角攻击的时候,我们强攻
-            if (unitEntity.atk_probability.InRange()||true) 
+            if (unitEntity.atk_probability.InRange() || true)
             {
-                if (currentState.excel_config.first_strike>0)
+                if (currentState.excel_config.first_strike > 0)
                 {
                     TriggerAtk_AI();
                 }
@@ -507,7 +551,7 @@ public class FSM : MonoBehaviour
     //强攻接口
     private void TriggerAtk_AI()
     {
-        if (animationService.normalizedTime>=currentState.excel_config.trigger_atk)
+        if (animationService.normalizedTime >= currentState.excel_config.trigger_atk)
         {
             AIAtk();
         }
@@ -517,21 +561,21 @@ public class FSM : MonoBehaviour
     //AI攻击的核心接口,所有让AI攻击的均调用该方法
     private void AIAtk()
     {
-        if (att_crn.hp<=0)
+        if (att_crn.hp <= 0)
         {
             return;
         }
         next_Atk = IntEx.Range(1005, 1012);
-        if (stateData[next_Atk].skillEntity.atk_distance>0)
+        if (stateData[next_Atk].skillEntity.atk_distance > 0)
         {
-            if (atk_target==null)
+            if (atk_target == null)
             {
                 atk_target = UnitManager.Instance.player;
             }
             //得到距离的平方
-            float sqrDistance=(this._transform.position-atk_target._transform.position).sqrMagnitude;
+            float sqrDistance = (this._transform.position - atk_target._transform.position).sqrMagnitude;
             //如果距离大于技能攻击距离
-            if (sqrDistance >= Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance,2))
+            if (sqrDistance >= Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance, 2))
             {
                 //想办法靠近角色
                 if (50.InRange() && false)
@@ -542,10 +586,10 @@ public class FSM : MonoBehaviour
                 }
                 else
                 {
-                    
-                    if (navigationService.state==0)
+
+                    if (navigationService.state == 0)
                     {
-                        navigationService.Move(atk_target._transform.position,MoveToPoint);
+                        navigationService.Move(atk_target._transform.position, MoveToPoint);
                     }
                 }
             }
@@ -570,8 +614,8 @@ public class FSM : MonoBehaviour
     public void OnDashEnd()
     {
         //冲刺结束之后,玩家可能移动,需要重新判定
-        float sqrDistance=(this._transform.position-atk_target._transform.position).sqrMagnitude;
-        if (sqrDistance >=  Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance,2))
+        float sqrDistance = (this._transform.position - atk_target._transform.position).sqrMagnitude;
+        if (sqrDistance >= Mathf.Pow(stateData[next_Atk].skillEntity.atk_distance, 2))
         {
             AIAtk();
         }
@@ -585,7 +629,7 @@ public class FSM : MonoBehaviour
     //当玩家攻击的时候,调用事件中心的OnPlayerAtk,方便敌人AI监听.
     private void OnSkillBegin()
     {
-        GameEvent.OnPlayerAtk?.Invoke(this,currentState.skillEntity);
+        GameEvent.OnPlayerAtk?.Invoke(this, currentState.skillEntity);
     }
     #endregion
     private void EnableCollider()
@@ -598,24 +642,24 @@ public class FSM : MonoBehaviour
         characterController.excludeLayers = GameDefine.Enemy_LayerMask;
     }
 
-    private float DoRotationSmoothTime=0.05f;
+    private float DoRotationSmoothTime = 0.05f;
     private float DoRotationVelocity;
     private void DoRotate()
     {
         float x = UInput.GetAxis_Horizontal();
-        float z=UInput.GetAxis_Vertical();
-        if (x!=0 || z!=0)
+        float z = UInput.GetAxis_Vertical();
+        if (x != 0 || z != 0)
         {
             if (animationService.normalizedTime <= currentState.excel_config.do_rotate)
             {
                 Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
                 //旋转
-                targetRotation= Mathf.Clamp(Mathf.Atan2(x,z)*Mathf.Rad2Deg,-45f,45f)+GameDefine.camera.eulerAngles.y;
+                targetRotation = Mathf.Clamp(Mathf.Atan2(x, z) * Mathf.Rad2Deg, -45f, 45f) + GameDefine.camera.eulerAngles.y;
                 //对旋转角度做一个限制,不超过60度,不然非常不自然
                 //平滑过度
-                float rotation=Mathf.SmoothDampAngle(_transform.eulerAngles.y,targetRotation,ref DoRotationVelocity,DoRotationSmoothTime);
+                float rotation = Mathf.SmoothDampAngle(_transform.eulerAngles.y, targetRotation, ref DoRotationVelocity, DoRotationSmoothTime);
                 //赋值
-                transform.rotation=Quaternion.Euler(0,rotation,0);
+                transform.rotation = Quaternion.Euler(0, rotation, 0);
             }
         }
     }
@@ -630,7 +674,7 @@ public class FSM : MonoBehaviour
 
         if (UInput.GetMouseButton_Left())
         {
-            if (GameTime.time-powAtk_BeginTime>=0.1f)
+            if (GameTime.time - powAtk_BeginTime >= 0.1f)
             {
                 if (CheckConfig(currentState.excel_config.on_pow_atk))
                 {
@@ -728,17 +772,17 @@ public class FSM : MonoBehaviour
     {
         float x = UInput.GetAxis_Horizontal();
         float z = UInput.GetAxis_Vertical();
-        if (x!=0 || z>0)
+        if (x != 0 || z > 0)
         {
-            Vector3 v = new Vector3(x, 0, z>0?z:0).normalized * currentState.excel_config.add_f_move;
-            Move(v,true,true,false,false);
+            Vector3 v = new Vector3(x, 0, z > 0 ? z : 0).normalized * currentState.excel_config.add_f_move;
+            Move(v, true, true, false, false);
         }
 
     }
 
     private void OnJumpUpdate()
     {
-        if (Physics.Raycast(_transform.position,Vector3.up*-1f,0.15f,GameDefine.Ground_LayerMask))
+        if (Physics.Raycast(_transform.position, Vector3.up * -1f, 0.15f, GameDefine.Ground_LayerMask))
         {
             ToNext(currentState.excel_config.on_jump_end);
         }
@@ -766,8 +810,8 @@ public class FSM : MonoBehaviour
 
     private float targetRotation;
     private float _rotationVelocity;
-    private float rotationSmoothTime=0.05f;
-    
+    private float rotationSmoothTime = 0.05f;
+
     private void PlayerMove()
     {
         if (UInput.GetAxis_Horizontal() != 0 || UInput.GetAxis_Vertical() != 0)
@@ -776,14 +820,14 @@ public class FSM : MonoBehaviour
             float z = UInput.GetAxis_Vertical();
             Vector3 inputDirection = new Vector3(x, 0f, z).normalized;
             //旋转
-            targetRotation=Mathf.Atan2(x,z)*Mathf.Rad2Deg+GameDefine.camera.eulerAngles.y;
+            targetRotation = Mathf.Atan2(x, z) * Mathf.Rad2Deg + GameDefine.camera.eulerAngles.y;
             //平滑过度
-            float rotation=Mathf.SmoothDampAngle(_transform.eulerAngles.y,targetRotation,ref _rotationVelocity,rotationSmoothTime);
+            float rotation = Mathf.SmoothDampAngle(_transform.eulerAngles.y, targetRotation, ref _rotationVelocity, rotationSmoothTime);
             //赋值
-            transform.rotation=Quaternion.Euler(0,rotation,0);
+            transform.rotation = Quaternion.Euler(0, rotation, 0);
             //计算移动方向
             Vector3 targetDirection = Quaternion.Euler(0.0f, targetRotation, 0.0f) * Vector3.forward;
-            Move(targetDirection.normalized*(_speed*GameTime.deltaTime),false,false,false,true);
+            Move(targetDirection.normalized * (_speed * GameTime.deltaTime), false, false, false, true);
         }
     }
 
@@ -794,8 +838,8 @@ public class FSM : MonoBehaviour
     /// <returns></returns>
     public bool CheckConfig(float[] config)
     {
-        if ((animationService.normalizedTime >0 && animationService.normalizedTime < config[0]) || 
-            (animationService.normalizedTime>config[1] && animationService.normalizedTime<1))
+        if ((animationService.normalizedTime > 0 && animationService.normalizedTime < config[0]) ||
+            (animationService.normalizedTime > config[1] && animationService.normalizedTime < 1))
         {
             return true;
         }
@@ -809,20 +853,20 @@ public class FSM : MonoBehaviour
     {
         if (groundCheck)
         {
-            if (Physics.Linecast(_transform.position,_transform.position+GameDefine.Ground_Dst,GameDefine.Ground_LayerMask))
+            if (Physics.Linecast(_transform.position, _transform.position + GameDefine.Ground_Dst, GameDefine.Ground_LayerMask))
             {
                 groundCheck = false;
             }
             else
             {
-                Move(Vector3.up * -9.81f,false,false,false,false);
+                Move(Vector3.up * -9.81f, false, false, false, false);
             }
         }
     }
-    
-    
-    private bool groundCheck=false;
-    public void Move(Vector3 dir,bool transformDirection,bool deltaTime=true,bool add_Gravity=true,bool do_ground_check=true)
+
+
+    private bool groundCheck = false;
+    public void Move(Vector3 dir, bool transformDirection, bool deltaTime = true, bool add_Gravity = true, bool do_ground_check = true)
     {
         if (transformDirection)
         {
@@ -831,11 +875,11 @@ public class FSM : MonoBehaviour
         Vector3 d2;
         if (add_Gravity)
         {
-            d2=(dir+GameDefine.gravity)*(deltaTime?GameTime.deltaTime:1);
+            d2 = (dir + GameDefine.gravity) * (deltaTime ? GameTime.deltaTime : 1);
         }
         else
         {
-            d2=dir*(deltaTime?GameTime.deltaTime:1);
+            d2 = dir * (deltaTime ? GameTime.deltaTime : 1);
         }
 
         if (do_ground_check)
@@ -847,7 +891,7 @@ public class FSM : MonoBehaviour
     }
     private void OnMove()
     {
-        if (UInput.GetAxis_Horizontal()!=0 || UInput.GetAxis_Vertical()!=0)
+        if (UInput.GetAxis_Horizontal() != 0 || UInput.GetAxis_Vertical() != 0)
         {
             if (CheckConfig(currentState.excel_config.on_move))
             {
@@ -863,25 +907,28 @@ public class FSM : MonoBehaviour
     {
         if (stateData.ContainsKey(next))
         {
-            
-                
-                //info信息显示
-                if (currentState != null)
-                {
-                    Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
-                }
-                else
-                {
-                    Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
-                }
-                
-            
+            //info信息显示
+            if (currentState != null)
+            {
+                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()},当前状态:{currentState.Info()}");
+            }
+            else
+            {
+                Debug.Log($"角色ID:{this.ID},切换状态:{stateData[next].Info()}");
+            }
+            //检查CD,切换状态
+            var next_state = stateData[next];
+            if (next_state.skillEntity != null && next_state.beginTime != 0 && GameTime.time - next_state.beginTime < next_state.skillEntity.cd)
+            {
+                MainViewController.Instance.OpenCD_Tips();
+                return false;
+            }
+
             //切换逻辑
             if (currentState != null)
             {
                 DoStateEvent(currentState.id, StateEventType.end);
                 ServicesOnEnd();
-
             }
 
             currentState = stateData[next];
@@ -891,7 +938,6 @@ public class FSM : MonoBehaviour
             ServicesOnBegin();
             return true;
         }
-
         return false;
     }
 
@@ -903,7 +949,7 @@ public class FSM : MonoBehaviour
             events = new();
             actions.Add(id, events);
         }
-        if (!events.TryGetValue(type, out var list)) 
+        if (!events.TryGetValue(type, out var list))
         {
             list = new List<Action>();
             events.Add(type, list);
@@ -976,12 +1022,12 @@ public class FSM : MonoBehaviour
     public void InitServices()
     {
         animationService = AddService<AnimationService>();
-        physicsService=AddService<PhysicsService>();
-        objService=AddService<ObjService>();
-        hitlagService=AddService<HitlagService>();
-        radialBlurService=AddService<RadialBlurService>();
-        hitService=AddService<HitService>();
-        navigationService=AddService<NavigationService>();
+        physicsService = AddService<PhysicsService>();
+        objService = AddService<ObjService>();
+        hitlagService = AddService<HitlagService>();
+        radialBlurService = AddService<RadialBlurService>();
+        hitService = AddService<HitService>();
+        navigationService = AddService<NavigationService>();
         services_Count = fsmServices.Count;
     }
     //Services的各种生命周期函数
@@ -1044,7 +1090,7 @@ public class FSM : MonoBehaviour
 
     public void AddForce(Vector3 force, bool currentEntityIgnoreGravity)
     {
-        Move(force,true,true,currentEntityIgnoreGravity==false,!currentEntityIgnoreGravity);
+        Move(force, true, true, currentEntityIgnoreGravity == false, !currentEntityIgnoreGravity);
     }
 
     public int GetEnemyLayer()
@@ -1061,19 +1107,19 @@ public class FSM : MonoBehaviour
 
     public void RemoveForce()
     {
-        
+
     }
-    Dictionary<string,GameObject> hangPoint=new Dictionary<string, GameObject>();
+    Dictionary<string, GameObject> hangPoint = new Dictionary<string, GameObject>();
     public GameObject GetHangPoint(string name)
     {
-        if (hangPoint.TryGetValue(name,out GameObject temp))
+        if (hangPoint.TryGetValue(name, out GameObject temp))
         {
             return temp;
         }
         else
         {
-            temp=_transform.Find(name).gameObject;
-            if (temp!=null)
+            temp = _transform.Find(name).gameObject;
+            if (temp != null)
             {
                 hangPoint[name] = temp;
                 return temp;
@@ -1083,27 +1129,30 @@ public class FSM : MonoBehaviour
                 hangPoint[name] = null;
                 return null;
             }
-            
+
         }
     }
 
     private EnemyHUD enemyHUD;
     public void UpdateHP_OnHit(int damage)
     {
-        att_crn.hp-=damage;
-        if (att_crn.hp<=0)
+        att_crn.hp -= damage;
+        if (att_crn.hp <= 0)
         {
             att_crn.hp = 0;
         }
-        Debug.Log($"当前的血量是{ att_crn.hp},收到了{damage}点伤害");
+        Debug.Log($"当前的血量是{att_crn.hp},收到了{damage}点伤害");
+        //计算当前血条百分比
+        float v = att_crn.hp / att_base.hp;
         //血条更新
         if (AI)
         {
-            if (unitEntity.type==3)
+            if (unitEntity.type == 3)
             {
-                 //更新BOss血条
+                //更新BOss血条
+                MainViewController.Instance.UpdateBossHP(v);
             }
-            else if (unitEntity.type==1 || unitEntity.type==2||unitEntity.type==0)
+            else if (unitEntity.type == 1 || unitEntity.type == 2 || unitEntity.type == 0)
             {
                 UpdateEnemyHud();
             }
@@ -1111,6 +1160,7 @@ public class FSM : MonoBehaviour
         else
         {
             //更新主角血条
+            MainViewController.Instance.UpdatePlayerHP(v);
         }
     }
 
@@ -1120,11 +1170,11 @@ public class FSM : MonoBehaviour
         {
             if (unitEntity.type == 1 || unitEntity.type == 2 || unitEntity.type == 0)
             {
-                if (enemyHUD==null)
+                if (enemyHUD == null)
                 {
                     enemyHUD = ResourcesManager.Instance.CreateEnemyHUD();
                 }
-                enemyHUD.UpdateHP(att_crn.hp/att_base.hp,this._transform,unitEntity.info);
+                enemyHUD.UpdateHP(att_crn.hp / att_base.hp, this._transform, unitEntity.info);
             }
         }
     }
@@ -1137,14 +1187,14 @@ public class FSM : MonoBehaviour
     /// <param name="atk"></param>
     public void OnHit(int fd, FSM atk)
     {
-        if (currentState.excel_config.on_hit!=null)
+        if (currentState.excel_config.on_hit != null)
         {
-            if (fd==1 || fd==0)//攻击者在自身的前方
+            if (fd == 1 || fd == 0)//攻击者在自身的前方
             {
                 //切换到前方受击
                 ToNext(currentState.excel_config.on_hit[0]);
             }
-            else if (fd==-1)
+            else if (fd == -1)
             {
                 //切换到后方受击
                 ToNext(currentState.excel_config.on_hit[1]);
@@ -1158,49 +1208,49 @@ public class FSM : MonoBehaviour
     /// <param name="atk"></param>
     public void OnDead(int fd, FSM atk)
     {
-        if (currentState.excel_config.on_hit!=null)
+        if (currentState.excel_config.on_hit != null)
         {
-            if (fd==1 || fd==0)//攻击者在自身的前方
+            if (fd == 1 || fd == 0)//攻击者在自身的前方
             {
                 //切换到前方受击
                 ToNext(currentState.excel_config.on_death[0]);
             }
-            else if (fd==-1)
+            else if (fd == -1)
             {
                 //切换到后方受击
                 ToNext(currentState.excel_config.on_death[1]);
             }
-            
+
         }
-        characterController.enabled=false;
+        characterController.enabled = false;
         //下面是特殊处理
     }
 
     public void Attack_Hitlag(PlayerState state)
     {
-        hitlagService.DoHitlag_OnAtk(animationService.normalizedTime,state);
+        hitlagService.DoHitlag_OnAtk(animationService.normalizedTime, state);
     }
-/// <summary>
-/// 格挡成功,进入格挡成功状态
-/// </summary>
-/// <param name="atk">攻击方</param>
-/// <exception cref="NotImplementedException"></exception>
+    /// <summary>
+    /// 格挡成功,进入格挡成功状态
+    /// </summary>
+    /// <param name="atk">攻击方</param>
+    /// <exception cref="NotImplementedException"></exception>
     public void OnBlockSucces(FSM atk)
     {
         UpdateEnemyHud();
-        if (currentState.excel_config.on_block_succes!=0)
+        if (currentState.excel_config.on_block_succes != 0)
         {
             ToNext(currentState.excel_config.on_block_succes);
         }
     }
-/// <summary>
-/// 攻击被格挡,进入弹反状态
-/// </summary>
-/// <param name="fsm">防守方</param>
-/// <exception cref="NotImplementedException"></exception>
+    /// <summary>
+    /// 攻击被格挡,进入弹反状态
+    /// </summary>
+    /// <param name="fsm">防守方</param>
+    /// <exception cref="NotImplementedException"></exception>
     public void BeBlock(FSM fsm)
     {
-        if (currentState.excel_config.be_block!=null)
+        if (currentState.excel_config.be_block != null)
         {
             ToNext(currentState.excel_config.be_block[0]);
         }
@@ -1215,10 +1265,10 @@ public class FSM : MonoBehaviour
     private Vector3 bash_fly_dir;
     public void OnBash(int direction, FSM player, float[] skillEntityAddFly, Vector3 hitinfoPoint)
     {
-        bash_add_fly=new Vector3(skillEntityAddFly[0],skillEntityAddFly[1],skillEntityAddFly[2]);
-        int dir=direction>0?0:1;
-        bash_fly_dir=(this._transform.position-atk_target._transform.position).normalized;
-        if (currentState.excel_config.on_bash!=null)
+        bash_add_fly = new Vector3(skillEntityAddFly[0], skillEntityAddFly[1], skillEntityAddFly[2]);
+        int dir = direction > 0 ? 0 : 1;
+        bash_fly_dir = (this._transform.position - player._transform.position).normalized;
+        if (currentState.excel_config.on_bash != null)
         {
             ToNext(currentState.excel_config.on_bash[dir]);
         }

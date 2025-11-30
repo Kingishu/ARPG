@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 
 public class Main : MonoBehaviour
@@ -18,6 +19,7 @@ public class Main : MonoBehaviour
 
     private void InitSystem()
     {
+        GameEvent.EventSystem=EventSystem.current;
         GameEvent.DoHitlag += DoHitLag;
         GameEvent.DoRadialBlur += DoRadialBlurConfig;
         GameDefine.Init();
@@ -31,6 +33,19 @@ public class Main : MonoBehaviour
         GameTime.Update();
         //UI的update循环
         ViewManager.Instance.Update();
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            BagData.Instance.Add(IntEx.Range(1001, 1010), IntEx.Range(1, 30), null);
+            BagData.Instance.Add(IntEx.Range(2001, 2057), IntEx.Range(1, 5), null);
+            BagData.Instance.Add(IntEx.Range(3001, 3013), IntEx.Range(1, 5), null);
+            BagViewController.Instance.Open();
+            BagViewController.Instance.view.Show(-1);
+        }
+        if (Input.GetKeyDown(KeyCode.H))
+        {
+            BagViewController.Instance.Close();
+        }
+        
     }
 
     #region 镜像模糊
